@@ -416,7 +416,10 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     // GSAP Intro
     if (window.gsap) {
       gsap.from('#docSummaryBanner', { opacity: 0, y: -8, duration: 0.25, ease: 'power2.out' });
-      gsap.from('.form-section.active .bento-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.3, ease: 'power2.out' });
+      const activeCards = document.querySelectorAll('.form-section.active .bento-card, .form-section.active .sim-preview-window, .form-section.active .xml-editor-canvas');
+      if (activeCards.length > 0) {
+        gsap.from(activeCards, { opacity: 0, y: 12, stagger: 0.03, duration: 0.3, ease: 'power2.out' });
+      }
     }
 
     setStatus(true, 'Dokument pripravený');
@@ -439,7 +442,27 @@ function applyDocumentTypeContext(type) {
   const sumScopeLabel = document.getElementById('sumScopeLabel');
   const sumRevWrap = document.getElementById('sumRevWrap');
 
+  // Dynamic Brand Adaptation (Logo, Title, Theme Accents)
+  const brandName = document.getElementById('brandName');
+  const brandTag = document.getElementById('brandTag');
+  const brandBadgeBox = document.getElementById('brandBadgeBox');
+  const brandIconDoc = document.getElementById('brandIconDoc');
+  const brandIconExcel = document.getElementById('brandIconExcel');
+  const brandIconPpt = document.getElementById('brandIconPpt');
+
   if (type === 'word') {
+    if (brandName) brandName.textContent = 'DocProps';
+    if (brandTag) {
+      brandTag.textContent = 'DOCX';
+      brandTag.className = 'brand-tag';
+    }
+    if (brandBadgeBox) brandBadgeBox.className = 'brand-badge-box';
+    if (brandIconDoc) brandIconDoc.style.display = 'block';
+    if (brandIconExcel) brandIconExcel.style.display = 'none';
+    if (brandIconPpt) brandIconPpt.style.display = 'none';
+
+    document.title = `DocProps Studio - ${currentFileInfo.name || 'Dokument.docx'}`;
+
     if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika obsahu';
     if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Metrika obsahu & Počítadlá (Word)';
     if (sumScopeLabel) sumScopeLabel.textContent = 'ROZSAH OBSAHU';
@@ -460,6 +483,18 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simOfficePagesRow').style.display = 'table-row';
     document.getElementById('simOfficeWordsRow').style.display = 'table-row';
   } else if (type === 'pptx') {
+    if (brandName) brandName.textContent = 'SlideProps';
+    if (brandTag) {
+      brandTag.textContent = 'PPTX';
+      brandTag.className = 'brand-tag pptx-theme';
+    }
+    if (brandBadgeBox) brandBadgeBox.className = 'brand-badge-box pptx-theme';
+    if (brandIconDoc) brandIconDoc.style.display = 'none';
+    if (brandIconExcel) brandIconExcel.style.display = 'none';
+    if (brandIconPpt) brandIconPpt.style.display = 'block';
+
+    document.title = `SlideProps Studio - ${currentFileInfo.name || 'Prezentácia.pptx'}`;
+
     if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika snímkov';
     if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Metrika prezentácie & Snímky (PowerPoint)';
     if (sumScopeLabel) sumScopeLabel.textContent = 'POČET SNÍMKOV';
@@ -480,6 +515,18 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simOfficePagesRow').style.display = 'none';
     document.getElementById('simOfficeWordsRow').style.display = 'none';
   } else if (type === 'xlsx') {
+    if (brandName) brandName.textContent = 'ExcelProps';
+    if (brandTag) {
+      brandTag.textContent = 'XLSX';
+      brandTag.className = 'brand-tag excel-theme';
+    }
+    if (brandBadgeBox) brandBadgeBox.className = 'brand-badge-box excel-theme';
+    if (brandIconDoc) brandIconDoc.style.display = 'none';
+    if (brandIconExcel) brandIconExcel.style.display = 'block';
+    if (brandIconPpt) brandIconPpt.style.display = 'none';
+
+    document.title = `ExcelProps Studio - ${currentFileInfo.name || 'Zošit.xlsx'}`;
+
     if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika zošita';
     if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Vlastnosti zošita (Excel)';
     if (sumScopeLabel) sumScopeLabel.textContent = 'TYP ZOŠITA';
@@ -499,6 +546,11 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Excel > Informácie';
     document.getElementById('simOfficePagesRow').style.display = 'none';
     document.getElementById('simOfficeWordsRow').style.display = 'none';
+  }
+
+  // Micro-interaction on badge transition
+  if (window.gsap && brandBadgeBox) {
+    gsap.fromTo(brandBadgeBox, { scale: 0.85, rotate: -6 }, { scale: 1, rotate: 0, duration: 0.35, ease: 'back.out(2)' });
   }
 }
 
