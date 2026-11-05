@@ -22,7 +22,7 @@
     "jszip": "^3.10.2"
   },
   "devDependencies": {
-    "electron": "^45.2.3",
-    "electron-packager": "^17.1.2"
+    "@electron/packager": "^20.3.0",
+    "electron": "^45.2.3"
   }
 }

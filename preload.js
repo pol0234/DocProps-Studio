@@ -6,3 +6,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveFileDialog: (defaultName, bufferData) => ipcRenderer.invoke('dialog:saveFile', { defaultName, bufferData }),
   onOpenFileFromSystem: (callback) => ipcRenderer.on('open-file-path', (event, filePath) => callback(filePath))
 });
+

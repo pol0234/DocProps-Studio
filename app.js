@@ -1,6 +1,6 @@
 /**
  * DocProps Studio - Desktop Application Engine
- * Native Electron + Web fallback engine
+ * Native Electron + Web fallback engine with Live Visual Simulators & Universal XML editor
  */
 
 // Global State
@@ -12,7 +12,8 @@ let currentFileInfo = {
 };
 
 let activeSectionId = 'secIdentity';
-let activeXmlPart = 'docProps/core.xml';
+let activeArchiveFile = 'docProps/core.xml';
+let originalSnapshot = {};
 
 let xmlDocs = {
   core: null,
@@ -112,7 +113,9 @@ function initNavigation() {
 
       if (secId === 'secXml') {
         syncFormToXmlDocs();
-        loadRawXmlIntoEditor(activeXmlPart);
+        loadArchiveFileIntoEditor(activeArchiveFile);
+      } else if (secId === 'secSimulator') {
+        updateLiveSimulators();
       }
     });
   });
@@ -184,6 +187,7 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
 
     currentZip = await JSZip.loadAsync(buffer);
     await parseArchiveMetadata();
+    populateArchiveDropdown();
 
     // Show Workspace, Hide Empty Dropzone
     document.getElementById('viewEmptyState').style.display = 'none';
@@ -194,8 +198,12 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
 
     // Update UI headers
     updateDocumentMetadataHeader();
-    setStatus(true, 'Dokument načítaný');
-    showToastNotice(`Dokument '${fileName}' bol úspešne otvorený.`);
+    saveSnapshot();
+    updateDiffSummary();
+    updateLiveSimulators();
+
+    setStatus(true, 'Dokument pripravený');
+    showToastNotice(`Dokument '${fileName}' bol úspešne načítaný.`);
   } catch (err) {
     console.error(err);
     alert('Neplatný formát OpenXML archívu. Uistite sa, že súbor nie je poškodený.');
@@ -240,7 +248,7 @@ function updateDocumentMetadataHeader() {
 async function parseArchiveMetadata() {
   const parser = new DOMParser();
 
-  // Core Properties
+  // Core Properties (docProps/core.xml)
   const coreFile = currentZip.file('docProps/core.xml');
   if (coreFile) {
     const text = await coreFile.async('text');
@@ -249,7 +257,7 @@ async function parseArchiveMetadata() {
     xmlDocs.core = parser.parseFromString(createBlankCoreXml(), 'application/xml');
   }
 
-  // App Properties
+  // App Properties (docProps/app.xml) - The key file with words, pages, total time
   const appFile = currentZip.file('docProps/app.xml');
   if (appFile) {
     const text = await appFile.async('text');
@@ -258,7 +266,7 @@ async function parseArchiveMetadata() {
     xmlDocs.app = parser.parseFromString(createBlankAppXml(), 'application/xml');
   }
 
-  // Custom Properties
+  // Custom Properties (docProps/custom.xml)
   const customFile = currentZip.file('docProps/custom.xml');
   if (customFile) {
     const text = await customFile.async('text');
@@ -293,25 +301,24 @@ function populateForm() {
   const totalMin = parseInt(getTagValue(xmlDocs.app, 'TotalTime') || '0', 10);
   setTotalMinutes(totalMin, false);
 
-  // App (Structure)
+  // App (Raw Metrics from docProps/app.xml)
   const pages = getTagValue(xmlDocs.app, 'Pages') || '0';
   const words = getTagValue(xmlDocs.app, 'Words') || '0';
   const slides = getTagValue(xmlDocs.app, 'Slides') || '0';
+
+  setVal('fWords', words);
+  setVal('fPages', pages);
+  setVal('fCharacters', getTagValue(xmlDocs.app, 'Characters'));
+  setVal('fCharactersWithSpaces', getTagValue(xmlDocs.app, 'CharactersWithSpaces'));
+  setVal('fParagraphs', getTagValue(xmlDocs.app, 'Paragraphs'));
+  setVal('fLines', getTagValue(xmlDocs.app, 'Lines'));
+  setVal('fSlides', slides);
 
   setVal('fCompany', getTagValue(xmlDocs.app, 'Company'));
   setVal('fManager', getTagValue(xmlDocs.app, 'Manager'));
   setVal('fTemplate', getTagValue(xmlDocs.app, 'Template'));
   setVal('fApplication', getTagValue(xmlDocs.app, 'Application'));
   setVal('fAppVersion', getTagValue(xmlDocs.app, 'AppVersion'));
-
-  setVal('fPages', pages);
-  setVal('fWords', words);
-  setVal('fCharacters', getTagValue(xmlDocs.app, 'Characters'));
-  setVal('fCharactersWithSpaces', getTagValue(xmlDocs.app, 'CharactersWithSpaces'));
-  setVal('fParagraphs', getTagValue(xmlDocs.app, 'Paragraphs'));
-  setVal('fLines', getTagValue(xmlDocs.app, 'Lines'));
-  setVal('fSlides', slides);
-  setVal('fNotes', getTagValue(xmlDocs.app, 'Notes'));
 
   // Update Bento Stats
   if (parseInt(slides, 10) > 0) {
@@ -345,24 +352,35 @@ function syncFormToXmlDocs() {
   const modifiedVal = getVal('fModified');
   if (modifiedVal) setTagValue(xmlDocs.core, 'modified', 'dcterms:modified', datetimeLocalToIso(modifiedVal));
 
-  // App
+  // App (docProps/app.xml)
   setTagValue(xmlDocs.app, 'TotalTime', 'TotalTime', getVal('fTotalTimeExact'));
+  setTagValue(xmlDocs.app, 'Words', 'Words', getVal('fWords'));
+  setTagValue(xmlDocs.app, 'Pages', 'Pages', getVal('fPages'));
+  setTagValue(xmlDocs.app, 'Characters', 'Characters', getVal('fCharacters'));
+  setTagValue(xmlDocs.app, 'CharactersWithSpaces', 'CharactersWithSpaces', getVal('fCharactersWithSpaces'));
+  setTagValue(xmlDocs.app, 'Paragraphs', 'Paragraphs', getVal('fParagraphs'));
+  setTagValue(xmlDocs.app, 'Lines', 'Lines', getVal('fLines'));
+  setTagValue(xmlDocs.app, 'Slides', 'Slides', getVal('fSlides'));
+
   setTagValue(xmlDocs.app, 'Company', 'Company', getVal('fCompany'));
   setTagValue(xmlDocs.app, 'Manager', 'Manager', getVal('fManager'));
   setTagValue(xmlDocs.app, 'Template', 'Template', getVal('fTemplate'));
   setTagValue(xmlDocs.app, 'Application', 'Application', getVal('fApplication'));
   setTagValue(xmlDocs.app, 'AppVersion', 'AppVersion', getVal('fAppVersion'));
 
-  setTagValue(xmlDocs.app, 'Pages', 'Pages', getVal('fPages'));
-  setTagValue(xmlDocs.app, 'Words', 'Words', getVal('fWords'));
-  setTagValue(xmlDocs.app, 'Characters', 'Characters', getVal('fCharacters'));
-  setTagValue(xmlDocs.app, 'CharactersWithSpaces', 'CharactersWithSpaces', getVal('fCharactersWithSpaces'));
-  setTagValue(xmlDocs.app, 'Paragraphs', 'Paragraphs', getVal('fParagraphs'));
-  setTagValue(xmlDocs.app, 'Lines', 'Lines', getVal('fLines'));
-  setTagValue(xmlDocs.app, 'Slides', 'Slides', getVal('fSlides'));
-  setTagValue(xmlDocs.app, 'Notes', 'Notes', getVal('fNotes'));
-
+  // Update Bento in real time
   document.getElementById('bentoRevision').textContent = `Rev. ${getVal('fRevision') || '1'}`;
+  document.getElementById('bentoWords').textContent = Number(getVal('fWords') || 0).toLocaleString();
+  const slides = getVal('fSlides');
+  const pages = getVal('fPages');
+  if (parseInt(slides, 10) > 0) {
+    document.getElementById('bentoScope').textContent = `${slides} snímkov`;
+  } else if (parseInt(pages, 10) > 0) {
+    document.getElementById('bentoScope').textContent = `${pages} strán`;
+  }
+
+  updateDiffSummary();
+  updateLiveSimulators();
 }
 
 // -----------------------------------------------------------------------------
@@ -371,12 +389,13 @@ function syncFormToXmlDocs() {
 function setTotalMinutes(minutes, triggerSync = true) {
   const m = parseInt(minutes, 10) || 0;
   document.getElementById('fTotalTimeExact').value = m;
-  document.getElementById('fTotalTimeRange').value = Math.min(m, 1800);
+  document.getElementById('fTotalTimeRange').value = Math.min(m, 2400);
   document.getElementById('timingLargeDisplay').textContent = `${m} min`;
   document.getElementById('timingHumanConverted').textContent = `Zodpovedá: ${formatMinutesToHuman(m)}`;
   document.getElementById('bentoTime').textContent = formatMinutesToShort(m);
 
   if (triggerSync) {
+    syncFormToXmlDocs();
     setStatus(false, 'Zmenené pole');
   }
 }
@@ -395,6 +414,259 @@ function formatMinutesToShort(m) {
   if (hours === 0) return `${remaining}m`;
   if (remaining === 0) return `${hours}h`;
   return `${hours}h ${remaining}m`;
+}
+
+// -----------------------------------------------------------------------------
+// Steppers for Words & Pages
+// -----------------------------------------------------------------------------
+function stepWords(delta) {
+  const current = parseInt(getVal('fWords') || '0', 10);
+  const next = Math.max(0, current + delta);
+  setVal('fWords', next);
+  syncFormToXmlDocs();
+  setStatus(false, 'Upravený počet slov');
+}
+
+function stepPages(delta) {
+  const current = parseInt(getVal('fPages') || '0', 10);
+  const next = Math.max(0, current + delta);
+  setVal('fPages', next);
+  syncFormToXmlDocs();
+  setStatus(false, 'Upravený počet strán');
+}
+
+// -----------------------------------------------------------------------------
+// Live Visual Simulators (Windows Explorer & Word Info)
+// -----------------------------------------------------------------------------
+function updateLiveSimulators() {
+  const snap = originalSnapshot;
+
+  // Helper to mark changed
+  function setSim(id, currentVal, origKey) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = currentVal || '-';
+    if (snap && snap[origKey] !== undefined && snap[origKey] !== currentVal) {
+      el.classList.add('changed');
+    } else {
+      el.classList.remove('changed');
+    }
+  }
+
+  // Windows Explorer Properties
+  setSim('simTitle', getVal('fTitle'), 'title');
+  setSim('simSubject', getVal('fSubject'), 'subject');
+  setSim('simKeywords', getVal('fKeywords'), 'keywords');
+  setSim('simCategory', getVal('fCategory'), 'category');
+  setSim('simComments', getVal('fDescription'), 'description');
+
+  setSim('simAuthors', getVal('fCreator'), 'creator');
+  setSim('simLastAuthor', getVal('fLastModifiedBy'), 'lastModifiedBy');
+  setSim('simRevision', getVal('fRevision'), 'revision');
+  setSim('simProgram', `${getVal('fApplication')} ${getVal('fAppVersion')}`.trim(), 'app');
+  setSim('simCompany', getVal('fCompany'), 'company');
+  setSim('simManager', getVal('fManager'), 'manager');
+
+  const totalMin = parseInt(getVal('fTotalTimeExact') || '0', 10);
+  setSim('simTotalTime', `${totalMin} minút (${formatMinutesToShort(totalMin)})`, 'totalTime');
+  setSim('simPages', getVal('fPages'), 'pages');
+  setSim('simWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
+  setSim('simCharacters', Number(getVal('fCharacters') || 0).toLocaleString(), 'characters');
+  setSim('simLines', getVal('fLines'), 'lines');
+  setSim('simParagraphs', getVal('fParagraphs'), 'paragraphs');
+
+  setSim('simCreated', formatPrettyDate(getVal('fCreated')), 'created');
+  setSim('simModified', formatPrettyDate(getVal('fModified')), 'modified');
+
+  // Word / Office Info Panel
+  setSim('simWordSize', formatBytes(currentFileInfo.size), 'size');
+  setSim('simWordPages', getVal('fPages'), 'pages');
+  setSim('simWordWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
+  setSim('simWordTotalTime', `${totalMin} minút`, 'totalTime');
+  setSim('simWordCreated', formatPrettyDate(getVal('fCreated')), 'created');
+  setSim('simWordModified', formatPrettyDate(getVal('fModified')), 'modified');
+  setSim('simWordAuthor', getVal('fCreator'), 'creator');
+  setSim('simWordLastModified', getVal('fLastModifiedBy'), 'lastModifiedBy');
+}
+
+function formatPrettyDate(dateLocalStr) {
+  if (!dateLocalStr) return '-';
+  try {
+    const d = new Date(dateLocalStr);
+    return d.toLocaleString('sk-SK', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch {
+    return dateLocalStr;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Snapshot & Diff Tracking
+// -----------------------------------------------------------------------------
+function saveSnapshot() {
+  originalSnapshot = {
+    creator: getVal('fCreator'),
+    lastModifiedBy: getVal('fLastModifiedBy'),
+    title: getVal('fTitle'),
+    subject: getVal('fSubject'),
+    keywords: getVal('fKeywords'),
+    category: getVal('fCategory'),
+    contentStatus: getVal('fContentStatus'),
+    description: getVal('fDescription'),
+    revision: getVal('fRevision'),
+    created: getVal('fCreated'),
+    modified: getVal('fModified'),
+    totalTime: getVal('fTotalTimeExact'),
+    words: getVal('fWords'),
+    pages: getVal('fPages'),
+    characters: getVal('fCharacters'),
+    charactersWithSpaces: getVal('fCharactersWithSpaces'),
+    paragraphs: getVal('fParagraphs'),
+    lines: getVal('fLines'),
+    slides: getVal('fSlides'),
+    company: getVal('fCompany'),
+    manager: getVal('fManager'),
+    template: getVal('fTemplate'),
+    app: getVal('fApplication'),
+    appVersion: getVal('fAppVersion')
+  };
+}
+
+function updateDiffSummary() {
+  const fields = [
+    { label: 'Autor (Creator)', key: 'creator', current: getVal('fCreator') },
+    { label: 'Posledný editor', key: 'lastModifiedBy', current: getVal('fLastModifiedBy') },
+    { label: 'Názov', key: 'title', current: getVal('fTitle') },
+    { label: 'Predmet', key: 'subject', current: getVal('fSubject') },
+    { label: 'Číslo revízie', key: 'revision', current: getVal('fRevision') },
+    { label: 'Čas úprav (minúty)', key: 'totalTime', current: getVal('fTotalTimeExact') },
+    { label: 'Počet slov', key: 'words', current: getVal('fWords') },
+    { label: 'Počet strán', key: 'pages', current: getVal('fPages') },
+    { label: 'Šablóna', key: 'template', current: getVal('fTemplate') },
+    { label: 'Spoločnosť', key: 'company', current: getVal('fCompany') },
+    { label: 'Dátum vytvorenia', key: 'created', current: getVal('fCreated') },
+    { label: 'Dátum úpravy', key: 'modified', current: getVal('fModified') }
+  ];
+
+  const diffs = [];
+  for (let f of fields) {
+    const orig = originalSnapshot[f.key] || '';
+    if (orig !== f.current) {
+      diffs.push({
+        label: f.label,
+        orig: orig || '(prázdne)',
+        current: f.current || '(vymazané)'
+      });
+    }
+  }
+
+  document.getElementById('diffCounter').textContent = diffs.length;
+
+  const tbody = document.getElementById('diffTableBody');
+  tbody.innerHTML = '';
+
+  if (diffs.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-tertiary); padding: 12px;">Žiadne zmeny oproti pôvodnému súboru.</td></tr>`;
+    return;
+  }
+
+  for (let d of diffs) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${escapeHtml(d.label)}</strong></td>
+      <td style="color: var(--text-tertiary); text-decoration: line-through;">${escapeHtml(d.orig)}</td>
+      <td style="color: var(--text-accent); font-weight: 600;">${escapeHtml(d.current)}</td>
+      <td><span class="diff-badge modified">ZMENA</span></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Universal Archive Browser & Raw XML Editor
+// -----------------------------------------------------------------------------
+function populateArchiveDropdown() {
+  const select = document.getElementById('xmlArchiveFileSelect');
+  select.innerHTML = '';
+
+  if (!currentZip) return;
+
+  const files = Object.keys(currentZip.files).filter(name => !currentZip.files[name].dir);
+  
+  // Sort with docProps first
+  files.sort((a, b) => {
+    if (a.startsWith('docProps/') && !b.startsWith('docProps/')) return -1;
+    if (!a.startsWith('docProps/') && b.startsWith('docProps/')) return 1;
+    return a.localeCompare(b);
+  });
+
+  for (let path of files) {
+    const opt = document.createElement('option');
+    opt.value = path;
+    opt.textContent = path;
+    if (path === 'docProps/core.xml') opt.selected = true;
+    select.appendChild(opt);
+  }
+
+  activeArchiveFile = select.value || 'docProps/core.xml';
+}
+
+async function loadArchiveFileIntoEditor(path) {
+  activeArchiveFile = path;
+  const editor = document.getElementById('xmlCodeEditor');
+  
+  // If it's one of our cached docs, serialize it
+  const serializer = new XMLSerializer();
+  let text = '';
+
+  if (path === 'docProps/core.xml' && xmlDocs.core) {
+    text = serializer.serializeToString(xmlDocs.core);
+  } else if (path === 'docProps/app.xml' && xmlDocs.app) {
+    text = serializer.serializeToString(xmlDocs.app);
+  } else if (path === 'docProps/custom.xml' && xmlDocs.custom) {
+    text = serializer.serializeToString(xmlDocs.custom);
+  } else if (currentZip && currentZip.file(path)) {
+    text = await currentZip.file(path).async('text');
+  } else {
+    text = `<!-- Súbor ${path} v archíve neexistuje -->`;
+  }
+
+  editor.value = formatXml(text);
+  document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid';
+  document.getElementById('xmlStatusNotice').style.color = '#22c55e';
+}
+
+async function applyArchiveCodeChanges() {
+  const code = document.getElementById('xmlCodeEditor').value.trim();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(code, 'application/xml');
+
+  const error = doc.querySelector('parsererror');
+  if (error) {
+    document.getElementById('xmlStatusNotice').textContent = 'Syntax: Chyba parsovania!';
+    document.getElementById('xmlStatusNotice').style.color = '#ef4444';
+    alert('Chyba XML syntaxe:\n' + error.textContent);
+    return;
+  }
+
+  document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid & Uložené';
+  document.getElementById('xmlStatusNotice').style.color = '#22c55e';
+
+  if (activeArchiveFile === 'docProps/core.xml') {
+    xmlDocs.core = doc;
+    populateForm();
+  } else if (activeArchiveFile === 'docProps/app.xml') {
+    xmlDocs.app = doc;
+    populateForm();
+  } else if (activeArchiveFile === 'docProps/custom.xml') {
+    xmlDocs.custom = doc;
+    populateForm();
+  } else if (currentZip) {
+    currentZip.file(activeArchiveFile, code);
+  }
+
+  syncFormToXmlDocs();
+  setStatus(false, 'Zmeny aplikované');
+  showToastNotice(`Zmeny v '${activeArchiveFile}' boli uložené do balíka.`);
 }
 
 // -----------------------------------------------------------------------------
@@ -497,54 +769,6 @@ function addNewCustomProperty() {
 }
 
 // -----------------------------------------------------------------------------
-// Raw XML Code Inspector
-// -----------------------------------------------------------------------------
-function loadRawXmlIntoEditor(partPath) {
-  activeXmlPart = partPath;
-  const serializer = new XMLSerializer();
-  let doc = null;
-
-  if (partPath === 'docProps/core.xml') doc = xmlDocs.core;
-  else if (partPath === 'docProps/app.xml') doc = xmlDocs.app;
-  else if (partPath === 'docProps/custom.xml') doc = xmlDocs.custom;
-
-  const editor = document.getElementById('xmlCodeEditor');
-  if (doc) {
-    const raw = serializer.serializeToString(doc);
-    editor.value = formatXml(raw);
-    document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid';
-    document.getElementById('xmlStatusNotice').style.color = '#22c55e';
-  } else {
-    editor.value = `<!-- Súbor ${partPath} v tomto balíku neexistuje -->`;
-  }
-}
-
-function applyXmlCodeChanges() {
-  const code = document.getElementById('xmlCodeEditor').value.trim();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(code, 'application/xml');
-
-  const error = doc.querySelector('parsererror');
-  if (error) {
-    document.getElementById('xmlStatusNotice').textContent = 'Syntax: Chyba parsovania!';
-    document.getElementById('xmlStatusNotice').style.color = '#ef4444';
-    alert('Chyba XML syntaxe:\n' + error.textContent);
-    return;
-  }
-
-  document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid & Aplikované';
-  document.getElementById('xmlStatusNotice').style.color = '#22c55e';
-
-  if (activeXmlPart === 'docProps/core.xml') xmlDocs.core = doc;
-  else if (activeXmlPart === 'docProps/app.xml') xmlDocs.app = doc;
-  else if (activeXmlPart === 'docProps/custom.xml') xmlDocs.custom = doc;
-
-  populateForm();
-  setStatus(false, 'Aplikované zmeny z XML');
-  showToastNotice(`Zmeny v '${activeXmlPart}' boli úspešne uložené.`);
-}
-
-// -----------------------------------------------------------------------------
 // Quick Actions
 // -----------------------------------------------------------------------------
 function actionSanitize() {
@@ -556,7 +780,7 @@ function actionSanitize() {
   setVal('fDescription', '');
   syncFormToXmlDocs();
   setStatus(false, 'Anonymizované');
-  showToastNotice('Osobné identifikačné údaje a cesta k šablóne boli vymazané.');
+  showToastNotice('Osobné stopy (autor, editor, firma, cesta šablóny) boli vymazané.');
 }
 
 function actionSyncDates() {
@@ -618,6 +842,9 @@ async function exportModifiedPackage() {
     const arrayBuf = await blob.arrayBuffer();
     const result = await window.electronAPI.saveFileDialog(exportName, Array.from(new Uint8Array(arrayBuf)));
     if (result && result.success) {
+      saveSnapshot();
+      updateDiffSummary();
+      updateLiveSimulators();
       setStatus(true, 'Uložené na disk');
       showToastNotice(`Súbor bol úspešne uložený: ${result.savedPath}`);
     }
@@ -632,6 +859,9 @@ async function exportModifiedPackage() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
+    saveSnapshot();
+    updateDiffSummary();
+    updateLiveSimulators();
     setStatus(true, 'Stiahnuté');
     showToastNotice(`Súbor '${exportName}' bol vyexportovaný.`);
   }
@@ -644,6 +874,7 @@ function initEvents() {
   // Input changes
   document.querySelectorAll('.input-field').forEach(input => {
     input.addEventListener('input', () => {
+      syncFormToXmlDocs();
       setStatus(false, 'Máte neuložené zmeny');
     });
   });
@@ -668,25 +899,30 @@ function initEvents() {
     document.getElementById('systemFileInput').click();
   });
 
+  document.getElementById('btnToggleDiff').addEventListener('click', () => {
+    const d = document.getElementById('diffContainer');
+    d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  });
+
+  document.getElementById('btnCloseDiff').addEventListener('click', () => {
+    document.getElementById('diffContainer').style.display = 'none';
+  });
+
   // Custom prop add
   document.getElementById('btnAddNewProp').addEventListener('click', addNewCustomProperty);
 
-  // XML Raw Buttons
-  document.querySelectorAll('.raw-xml-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.raw-xml-tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadRawXmlIntoEditor(btn.getAttribute('data-xml-part'));
-    });
+  // XML Archive select
+  document.getElementById('xmlArchiveFileSelect').addEventListener('change', (e) => {
+    loadArchiveFileIntoEditor(e.target.value);
   });
 
   document.getElementById('btnPrettifyXmlCode').addEventListener('click', () => {
     const editor = document.getElementById('xmlCodeEditor');
     editor.value = formatXml(editor.value);
-    showToastNotice('XML bolo naformátované.');
+    showToastNotice('XML kód bol naformátovaný.');
   });
 
-  document.getElementById('btnApplyXmlCode').addEventListener('click', applyXmlCodeChanges);
+  document.getElementById('btnApplyXmlCode').addEventListener('click', applyArchiveCodeChanges);
 
   // Sample document
   document.getElementById('btnLoadSample').addEventListener('click', loadSamplePackage);
@@ -879,7 +1115,7 @@ async function loadSamplePackage() {
 
   const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <Template>C:\\Users\\Admin\\Templates\\Normal.dotm</Template>
+    <Template>C:\\Users\\Author\\Templates\\Normal.dotm</Template>
     <TotalTime>580</TotalTime>
     <Pages>52</Pages>
     <Words>15420</Words>
