@@ -160,9 +160,10 @@
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
               Iný súbor
             </button>
-            <button id="btnExportPrimary" class="btn btn-primary btn-sm">
+            <button id="btnExportPrimary" class="btn btn-primary btn-shiny btn-sm">
+              <span class="shiny-shimmer"></span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-              Uložiť &amp; Exportovať
+              <span>Uložiť &amp; Exportovať</span>
             </button>
           </div>
         </div>
@@ -172,8 +173,9 @@
           
           <!-- View 1: Empty Dropzone State -->
           <div id="viewEmptyState" class="empty-state-view">
+            <canvas id="ambientDropCanvas" class="ambient-drop-canvas"></canvas>
             <input type="file" id="systemFileInput" accept=".docx,.pptx,.xlsx,.dotx,.potx,.xltx,.docm,.pptm,.xlsm" style="display: none;">
-            <div id="dropzoneBox" class="dropzone-box">
+            <div id="dropzoneBox" class="dropzone-box spotlight-card">
               <div class="dropzone-hero-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -182,11 +184,17 @@
                 </svg>
               </div>
               <div class="dropzone-heading">Presuňte Office dokument do tohto okna</div>
-              <div class="dropzone-text">Aplikácia automaticky rozpozná typ dokumentu (Word, Excel alebo PowerPoint) a prispôsobí polia.</div>
+              <div class="dropzone-text">Aplikácia automaticky rozpozná typ dokumentu a pripraví izolovaný editor s reálnym náhľadom.</div>
               <div class="format-tags">
-                <span class="format-tag">DOCX (Word)</span>
-                <span class="format-tag">PPTX (PowerPoint)</span>
-                <span class="format-tag">XLSX (Excel)</span>
+                <span class="format-tag"><span class="tag-dot word"></span>DOCX (Word)</span>
+                <span class="format-tag"><span class="tag-dot pptx"></span>PPTX (PowerPoint)</span>
+                <span class="format-tag"><span class="tag-dot xlsx"></span>XLSX (Excel)</span>
+              </div>
+              <div class="dropzone-browse-row">
+                <button type="button" id="btnBrowseHero" class="btn btn-secondary btn-sm dropzone-browse-btn">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  Vybrať súbor z počítača
+                </button>
               </div>
             </div>
           </div>

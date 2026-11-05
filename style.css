@@ -7,22 +7,22 @@
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
 
-  /* Dark Theme Palette (Default) */
-  --bg-app: #090a0c;
-  --bg-sidebar: #0f1013;
-  --bg-card: #15161a;
-  --bg-card-hover: #1c1d22;
-  --bg-input: #0b0c0e;
-  --bg-surface-elevated: #202227;
+  /* Dark Theme Palette (Craft Obsidian - Coolors Balanced) */
+  --bg-app: #08090c;
+  --bg-sidebar: #0d0e12;
+  --bg-card: rgba(18, 20, 26, 0.75);
+  --bg-card-hover: rgba(26, 29, 38, 0.85);
+  --bg-input: #0a0b0e;
+  --bg-surface-elevated: #161820;
   --bg-accent-subtle: rgba(59, 130, 246, 0.12);
 
   --text-primary: #f4f4f6;
-  --text-secondary: #a0a4ae;
-  --text-tertiary: #6b707c;
+  --text-secondary: #9da2af;
+  --text-tertiary: #656976;
   --text-accent: #3b82f6;
 
-  --border-subtle: #1e2025;
-  --border-strong: #2c2f37;
+  --border-subtle: #1a1c22;
+  --border-strong: #272a33;
   --border-focus: #3b82f6;
 
   --badge-word: #2563eb;
@@ -470,56 +470,84 @@ html, body {
   padding: 20px 24px;
 }
 
-/* Empty State / Dropzone */
+/* Empty State / Dropzone (Craft Ambient Canvas Hero) */
 .empty-state-view {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  overflow: hidden;
+}
+
+.ambient-drop-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .dropzone-box {
+  position: relative;
+  z-index: 2;
   width: 100%;
   max-width: 520px;
-  border: 1px dashed var(--border-strong);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-lg);
-  padding: 48px 32px;
-  background: var(--bg-card);
+  padding: 44px 32px;
+  background: rgba(15, 17, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .dropzone-box:hover {
-  border-color: var(--text-accent);
-  background: var(--bg-card-hover);
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(22, 25, 34, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(59, 130, 246, 0.12);
 }
 
 .dropzone-box.dragover {
   border-color: var(--text-accent);
   border-style: solid;
-  background: var(--bg-accent-subtle);
-  transform: scale(1.01);
+  background: rgba(37, 99, 235, 0.14);
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
 }
 
 .dropzone-hero-icon {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   margin: 0 auto 16px auto;
-  border-radius: var(--radius-md);
-  background: var(--bg-input);
-  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(16, 185, 129, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-accent);
+  color: #60a5fa;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.dropzone-box:hover .dropzone-hero-icon {
+  transform: scale(1.08) rotate(3deg);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
 .dropzone-heading {
   font-size: 15px;
   font-weight: 600;
   margin-bottom: 6px;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
@@ -527,23 +555,140 @@ html, body {
   font-size: 12px;
   color: var(--text-secondary);
   margin-bottom: 20px;
+  max-width: 440px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
 }
 
 .format-tags {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .format-tag {
-  font-size: 10px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-  background: var(--bg-input);
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid var(--border-subtle);
-  padding: 2px 6px;
-  border-radius: var(--radius-xs);
-  color: var(--text-tertiary);
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+}
+
+.tag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.tag-dot.word { background: #3b82f6; box-shadow: 0 0 6px rgba(59, 130, 246, 0.6); }
+.tag-dot.pptx { background: #f97316; box-shadow: 0 0 6px rgba(249, 115, 22, 0.6); }
+.tag-dot.xlsx { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); }
+
+.dropzone-browse-row {
+  margin-top: 20px;
+}
+
+.dropzone-browse-btn {
+  border-radius: 999px;
+  padding: 6px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.dropzone-browse-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.03);
+}
+
+/* 21st.dev Dynamic Cursor Spotlight Effect */
+.spotlight-card,
+.input-card,
+.doc-card,
+.timing-module,
+.sim-window {
+  position: relative;
+  background-clip: padding-box;
+}
+
+.spotlight-card::before,
+.input-card::before,
+.doc-card::before,
+.timing-module::before,
+.sim-window::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    360px circle at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    rgba(59, 130, 246, 0.28),
+    transparent 55%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 2;
+}
+
+.spotlight-card:hover::before,
+.input-card:hover::before,
+.doc-card:hover::before,
+.timing-module:hover::before,
+.sim-window:hover::before {
+  opacity: 1;
+}
+
+/* 21st.dev Shiny Primary Button */
+.btn-shiny {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+  transition: all 0.2s ease;
+}
+
+.btn-shiny:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.5), 0 0 12px rgba(96, 165, 250, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-shiny:active {
+  transform: scale(0.98);
+}
+
+.shiny-shimmer {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 100%
+  );
+  animation: shiny-sweep 4s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes shiny-sweep {
+  0% { left: -100%; }
+  30%, 100% { left: 100%; }
 }
 
 /* Form Sections */

@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initEvents();
   initKeyboardShortcuts();
   initElectronBridge();
+  initSpotlightCards();
+  initAmbientHeroCanvas();
 });
 
 // -----------------------------------------------------------------------------
@@ -54,6 +56,145 @@ function initElectronBridge() {
       }
     });
   }
+}
+
+// -----------------------------------------------------------------------------
+// Craft Web Design: Ambient Hero Canvas & Dynamic Spotlight
+// -----------------------------------------------------------------------------
+let ambientCanvasAnimationId = null;
+let ambientCanvasRunning = false;
+
+function initAmbientHeroCanvas() {
+  const canvas = document.getElementById('ambientDropCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  let width = (canvas.width = canvas.offsetWidth || window.innerWidth);
+  let height = (canvas.height = canvas.offsetHeight || window.innerHeight);
+
+  window.addEventListener('resize', () => {
+    if (!ambientCanvasRunning) return;
+    width = canvas.width = canvas.offsetWidth || window.innerWidth;
+    height = canvas.height = canvas.offsetHeight || window.innerHeight;
+  });
+
+  const numParticles = 44;
+  const colors = [
+    'rgba(59, 130, 246, 0.40)', // Word Cobalt
+    'rgba(16, 185, 129, 0.35)', // Excel Emerald
+    'rgba(249, 115, 22, 0.35)'  // PowerPoint Amber
+  ];
+
+  const particles = [];
+  for (let i = 0; i < numParticles; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      radius: Math.random() * 1.8 + 1,
+      color: colors[i % colors.length]
+    });
+  }
+
+  let mouse = { x: -999, y: -999 };
+  const dropzoneView = document.getElementById('viewEmptyState');
+  if (dropzoneView) {
+    dropzoneView.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    });
+    dropzoneView.addEventListener('mouseleave', () => {
+      mouse.x = -999;
+      mouse.y = -999;
+    });
+  }
+
+  function render() {
+    if (!ambientCanvasRunning) return;
+    ctx.clearRect(0, 0, width, height);
+
+    for (let i = 0; i < numParticles; i++) {
+      const p = particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+
+      if (p.x < 0) p.x = width;
+      if (p.x > width) p.x = 0;
+      if (p.y < 0) p.y = height;
+      if (p.y > height) p.y = 0;
+
+      // Gentle interactive repulsion
+      if (mouse.x > 0) {
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 130 && dist > 0) {
+          const force = (130 - dist) / 130;
+          p.x += (dx / dist) * force * 1.1;
+          p.y += (dy / dist) * force * 1.1;
+        }
+      }
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+
+      // Constellation lines
+      for (let j = i + 1; j < numParticles; j++) {
+        const p2 = particles[j];
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 95) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 * (1 - dist / 95)})`;
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        }
+      }
+    }
+
+    ambientCanvasAnimationId = requestAnimationFrame(render);
+  }
+
+  ambientCanvasRunning = true;
+  render();
+}
+
+function stopAmbientHeroCanvas() {
+  ambientCanvasRunning = false;
+  if (ambientCanvasAnimationId) {
+    cancelAnimationFrame(ambientCanvasAnimationId);
+    ambientCanvasAnimationId = null;
+  }
+}
+
+function startAmbientHeroCanvas() {
+  if (!ambientCanvasRunning) {
+    ambientCanvasRunning = true;
+    initAmbientHeroCanvas();
+  }
+}
+
+function initSpotlightCards() {
+  document.addEventListener('mousemove', (e) => {
+    const cards = document.querySelectorAll('.spotlight-card, .input-card, .doc-card, .timing-module, .sim-window');
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x >= -40 && x <= rect.width + 40 && y >= -40 && y <= rect.height + 40) {
+        card.style.setProperty('--mouse-x', `${x}px`);
+        card.style.setProperty('--mouse-y', `${y}px`);
+      }
+    });
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -179,6 +320,21 @@ function initDragAndDrop() {
       loadFile(e.dataTransfer.files[0]);
     }
   });
+
+  const btnBrowseHero = document.getElementById('btnBrowseHero');
+  if (btnBrowseHero) {
+    btnBrowseHero.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (window.electronAPI) {
+        const fileData = await window.electronAPI.openFileDialog();
+        if (fileData) {
+          loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+        }
+      } else {
+        fileInput.click();
+      }
+    });
+  }
 }
 
 async function loadFile(file) {
@@ -215,7 +371,8 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     await parseArchiveMetadata();
     populateArchiveDropdown();
 
-    // Show Workspace, Hide Empty Dropzone
+    // Show Workspace, Hide Empty Dropzone & stop ambient canvas
+    stopAmbientHeroCanvas();
     document.getElementById('viewEmptyState').style.display = 'none';
     document.getElementById('viewFormSections').style.display = 'block';
     document.getElementById('sidebarDocCard').style.display = 'flex';
@@ -1044,6 +1201,12 @@ async function exportModifiedPackage() {
       updateLiveSimulators();
       setStatus(true, 'Uložené na disk');
       showToastNotice(`Súbor bol úspešne uložený: ${result.savedPath}`);
+      if (window.gsap) {
+        gsap.fromTo('#btnExportPrimary', 
+          { scale: 1.06 }, 
+          { scale: 1, duration: 0.35, ease: 'back.out(2)' }
+        );
+      }
     }
   } else {
     // Browser fallback
@@ -1061,6 +1224,12 @@ async function exportModifiedPackage() {
     updateLiveSimulators();
     setStatus(true, 'Stiahnuté');
     showToastNotice(`Súbor '${exportName}' bol vyexportovaný.`);
+    if (window.gsap) {
+      gsap.fromTo('#btnExportPrimary', 
+        { scale: 1.06 }, 
+        { scale: 1, duration: 0.35, ease: 'back.out(2)' }
+      );
+    }
   }
 }
 
@@ -1088,8 +1257,15 @@ function initEvents() {
   document.getElementById('btnActionClearTemplate').addEventListener('click', actionClearTemplate);
 
   document.getElementById('btnExportPrimary').addEventListener('click', exportModifiedPackage);
-  document.getElementById('btnOpenFileSecondary').addEventListener('click', () => {
-    document.getElementById('systemFileInput').click();
+  document.getElementById('btnOpenFileSecondary').addEventListener('click', async () => {
+    if (window.electronAPI) {
+      const fileData = await window.electronAPI.openFileDialog();
+      if (fileData) {
+        loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+      }
+    } else {
+      document.getElementById('systemFileInput').click();
+    }
   });
 
   document.getElementById('btnToggleDiff').addEventListener('click', () => {
