@@ -11,6 +11,7 @@ function createWindow() {
     minWidth: 960,
     minHeight: 640,
     title: 'DocProps Studio',
+    icon: path.join(__dirname, 'icon.ico'),
     backgroundColor: '#090a0c',
     titleBarStyle: 'hidden',
     titleBarOverlay: {
