@@ -6,6 +6,7 @@
   <title>DocProps Studio</title>
   <link rel="stylesheet" href="style.css">
   <script src="vendor/jszip.min.js"></script>
+  <script src="vendor/gsap.min.js"></script>
 </head>
 <body>
 
@@ -52,6 +53,7 @@
             <div id="sideTypeBadge" class="doc-type-icon type-word">DOC</div>
             <div class="doc-title-block">
               <div id="sideFileName" class="doc-filename">dokument.docx</div>
+              <div id="sideTypeLabel" class="doc-type-label">Microsoft Word</div>
               <div id="sideFileSize" class="doc-filesize">0 KB • OOXML</div>
             </div>
           </div>
@@ -66,12 +68,12 @@
               <div class="bento-label">Revízia</div>
               <div id="bentoRevision" class="bento-value">Rev. 1</div>
             </div>
-            <div class="bento-item">
-              <div class="bento-label">Počet slov</div>
+            <div class="bento-item" id="bentoWordsItem">
+              <div class="bento-label" id="bentoMetric1Label">Počet slov</div>
               <div id="bentoWords" class="bento-value">0</div>
             </div>
-            <div class="bento-item">
-              <div class="bento-label">Rozsah</div>
+            <div class="bento-item" id="bentoScopeItem">
+              <div class="bento-label" id="bentoMetric2Label">Rozsah</div>
               <div id="bentoScope" class="bento-value">0 strán</div>
             </div>
           </div>
@@ -95,13 +97,13 @@
 
           <button class="nav-item" data-section="secMetrics">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <span>Surová metrika (Slová/Strany)</span>
+            <span id="navMetricsTitle">Surová metrika (Slová/Strany)</span>
             <span class="nav-badge">app.xml</span>
           </button>
 
           <button class="nav-item" data-section="secSimulator">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-            <span>Živý simulátor (Windows &amp; Word)</span>
+            <span>Živý simulátor náhľadu</span>
             <span class="nav-badge">Náhľad</span>
           </button>
 
@@ -146,6 +148,7 @@
             <span id="bcDocName">Súbor nebol načítaný</span>
             <span class="separator">/</span>
             <span id="bcCurrentSection" class="current">Identita &amp; Autorstvo</span>
+            <span id="bcDocTypePill" class="doc-type-pill" style="display: none;">WORD</span>
           </div>
 
           <div class="toolbar-controls" id="toolbarControls" style="display: none;">
@@ -179,13 +182,11 @@
                 </svg>
               </div>
               <div class="dropzone-heading">Presuňte Office dokument do tohto okna</div>
-              <div class="dropzone-text">alebo kliknite a vyberte súbor z disku počítača</div>
+              <div class="dropzone-text">Aplikácia automaticky rozpozná typ dokumentu (Word, Excel alebo PowerPoint) a prispôsobí polia.</div>
               <div class="format-tags">
-                <span class="format-tag">DOCX</span>
-                <span class="format-tag">PPTX</span>
-                <span class="format-tag">XLSX</span>
-                <span class="format-tag">DOTX</span>
-                <span class="format-tag">POTX</span>
+                <span class="format-tag">DOCX (Word)</span>
+                <span class="format-tag">PPTX (PowerPoint)</span>
+                <span class="format-tag">XLSX (Excel)</span>
               </div>
             </div>
           </div>
@@ -193,6 +194,15 @@
           <!-- View 2: Form Sections -->
           <div id="viewFormSections" style="display: none;">
             
+            <!-- Dynamic Context Document Banner -->
+            <div id="docTypeBanner" class="doc-type-banner">
+              <div class="doc-type-banner-title">
+                <span id="bannerDocIcon"></span>
+                <span id="bannerDocTitle">Microsoft Word Dokument</span>
+              </div>
+              <div class="doc-type-banner-desc" id="bannerDocDesc">Zobrazené sú polia špecifické pre formát DOCX.</div>
+            </div>
+
             <!-- SECTION 1: Identity & Authorship -->
             <section id="secIdentity" class="form-section active">
               <div class="section-header">
@@ -339,14 +349,15 @@
             <section id="secMetrics" class="form-section">
               <div class="section-header">
                 <div>
-                  <h2 class="section-title">Surová metrika &amp; Počítadlá (docProps/app.xml)</h2>
-                  <p class="section-description">Surové počty slov, strán a znakov v súbore. Tieto čísla číta Windows a Word vo vlastnostiach bez toho, aby fyzicky analyzoval telo dokumentu.</p>
+                  <h2 class="section-title" id="metricsSectionHeading">Surová metrika &amp; Počítadlá (docProps/app.xml)</h2>
+                  <p class="section-description" id="metricsSectionSubtext">Tieto polia sú prispôsobené konkrétnemu typu súboru.</p>
                 </div>
               </div>
 
               <div class="card-grid">
-                <!-- Word Count Stepper -->
-                <div class="input-card span-2">
+                
+                <!-- WORD SPECIFIC FIELDS -->
+                <div class="input-card span-2 doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fWords">Surový počet slov (Words)</label>
                     <span class="input-badge">&lt;Words&gt; v docProps/app.xml</span>
@@ -360,8 +371,7 @@
                   </div>
                 </div>
 
-                <!-- Page Count Stepper -->
-                <div class="input-card">
+                <div class="input-card doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fPages">Surový počet strán (Pages)</label>
                     <span class="input-badge">&lt;Pages&gt;</span>
@@ -375,7 +385,7 @@
                   </div>
                 </div>
 
-                <div class="input-card">
+                <div class="input-card doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fCharacters">Počet znakov</label>
                     <span class="input-badge">Characters</span>
@@ -383,7 +393,7 @@
                   <input type="number" id="fCharacters" min="0" class="input-field mono">
                 </div>
 
-                <div class="input-card">
+                <div class="input-card doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fCharactersWithSpaces">Znaky s medzerami</label>
                     <span class="input-badge">CharactersWithSpaces</span>
@@ -391,7 +401,7 @@
                   <input type="number" id="fCharactersWithSpaces" min="0" class="input-field mono">
                 </div>
 
-                <div class="input-card">
+                <div class="input-card doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fParagraphs">Počet odsekov</label>
                     <span class="input-badge">Paragraphs</span>
@@ -399,7 +409,7 @@
                   <input type="number" id="fParagraphs" min="0" class="input-field mono">
                 </div>
 
-                <div class="input-card">
+                <div class="input-card doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fLines">Počet riadkov</label>
                     <span class="input-badge">Lines</span>
@@ -407,17 +417,39 @@
                   <input type="number" id="fLines" min="0" class="input-field mono">
                 </div>
 
-                <!-- PowerPoint specifics -->
-                <div class="input-card">
+                <!-- POWERPOINT SPECIFIC FIELDS -->
+                <div class="input-card doc-field-pptx" style="display: none;">
                   <div class="input-label-row">
-                    <label class="input-label" for="fSlides">Počet snímkov (Slides - PPTX)</label>
-                    <span class="input-badge">Slides</span>
+                    <label class="input-label" for="fSlides">Počet snímkov (Slides)</label>
+                    <span class="input-badge">&lt;Slides&gt;</span>
                   </div>
-                  <input type="number" id="fSlides" min="0" class="input-field mono">
+                  <div class="stepper-row">
+                    <input type="number" id="fSlides" min="0" class="input-field mono" style="font-size: 15px; font-weight: 600;">
+                    <button class="stepper-btn" onclick="stepSlides(-5)">-5</button>
+                    <button class="stepper-btn" onclick="stepSlides(-1)">-1</button>
+                    <button class="stepper-btn" onclick="stepSlides(+1)">+1</button>
+                    <button class="stepper-btn" onclick="stepSlides(+5)">+5</button>
+                  </div>
                 </div>
 
-                <!-- System traces -->
-                <div class="input-card span-2">
+                <div class="input-card doc-field-pptx" style="display: none;">
+                  <div class="input-label-row">
+                    <label class="input-label" for="fNotes">Počet poznámok (Notes)</label>
+                    <span class="input-badge">&lt;Notes&gt;</span>
+                  </div>
+                  <input type="number" id="fNotes" min="0" class="input-field mono">
+                </div>
+
+                <div class="input-card doc-field-pptx" style="display: none;">
+                  <div class="input-label-row">
+                    <label class="input-label" for="fHiddenSlides">Skryté snímky (HiddenSlides)</label>
+                    <span class="input-badge">&lt;HiddenSlides&gt;</span>
+                  </div>
+                  <input type="number" id="fHiddenSlides" min="0" class="input-field mono">
+                </div>
+
+                <!-- SYSTEM TRACES & IDENTIFIERS -->
+                <div class="input-card span-2 doc-field-template">
                   <div class="input-label-row">
                     <label class="input-label" for="fTemplate">Cesta k šablóne (Template)</label>
                     <span class="input-badge">Template</span>
@@ -463,8 +495,8 @@
             <section id="secSimulator" class="form-section">
               <div class="section-header">
                 <div>
-                  <h2 class="section-title">Živý simulátor: Ako tento dokument uvidia ostatní</h2>
-                  <p class="section-description">Reálny náhľad toho, čo sa zobrazí v Prieskumníku Windows (Vlastnosti súboru) a vo vnútri Wordu/PowerPointu (Súbor -&gt; Informácie).</p>
+                  <h2 class="section-title">Živý simulátor náhľadu</h2>
+                  <p class="section-description">Reálny náhľad toho, ako tento súbor vidí Windows Prieskumník a kancelársky balík Office.</p>
                 </div>
               </div>
 
@@ -495,13 +527,14 @@
                       <tr><td class="sim-label">Spoločnosť</td><td id="simCompany" class="sim-val">-</td></tr>
                       <tr><td class="sim-label">Správca</td><td id="simManager" class="sim-val">-</td></tr>
 
-                      <tr><td colspan="2" class="sim-group-title">Štatistika (docProps/app.xml)</td></tr>
+                      <tr><td colspan="2" class="sim-group-title" id="simStatsGroupTitle">Štatistika (docProps/app.xml)</td></tr>
                       <tr><td class="sim-label">Celkový čas úprav</td><td id="simTotalTime" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Počet strán</td><td id="simPages" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Počet slov</td><td id="simWords" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Počet znakov</td><td id="simCharacters" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Riadky</td><td id="simLines" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Odseky</td><td id="simParagraphs" class="sim-val">-</td></tr>
+                      <tr id="simRowPages"><td class="sim-label">Počet strán</td><td id="simPages" class="sim-val">-</td></tr>
+                      <tr id="simRowWords"><td class="sim-label">Počet slov</td><td id="simWords" class="sim-val">-</td></tr>
+                      <tr id="simRowSlides" style="display: none;"><td class="sim-label">Počet snímkov</td><td id="simSlides" class="sim-val">-</td></tr>
+                      <tr id="simRowCharacters"><td class="sim-label">Počet znakov</td><td id="simCharacters" class="sim-val">-</td></tr>
+                      <tr id="simRowLines"><td class="sim-label">Riadky</td><td id="simLines" class="sim-val">-</td></tr>
+                      <tr id="simRowParagraphs"><td class="sim-label">Odseky</td><td id="simParagraphs" class="sim-val">-</td></tr>
 
                       <tr><td colspan="2" class="sim-group-title">Dátum</td></tr>
                       <tr><td class="sim-label">Vytvorené</td><td id="simCreated" class="sim-val">-</td></tr>
@@ -515,15 +548,15 @@
                   <div class="sim-header">
                     <div class="sim-title">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
-                      Microsoft Word: Súbor &gt; Informácie
+                      <span id="simOfficeAppTitle">Microsoft Office &gt; Informácie</span>
                     </div>
                   </div>
                   <div class="sim-body">
                     <table class="sim-table">
                       <tr><td colspan="2" class="sim-group-title">Vlastnosti</td></tr>
                       <tr><td class="sim-label">Veľkosť</td><td id="simWordSize" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Strany</td><td id="simWordPages" class="sim-val">-</td></tr>
-                      <tr><td class="sim-label">Slová</td><td id="simWordWords" class="sim-val">-</td></tr>
+                      <tr id="simOfficeRowPages"><td class="sim-label" id="simOfficePagesLabel">Strany</td><td id="simWordPages" class="sim-val">-</td></tr>
+                      <tr id="simOfficeRowWords"><td class="sim-label">Slová</td><td id="simWordWords" class="sim-val">-</td></tr>
                       <tr><td class="sim-label">Celkový čas úprav</td><td id="simWordTotalTime" class="sim-val">-</td></tr>
 
                       <tr><td colspan="2" class="sim-group-title">Súvisiace dátumy</td></tr>

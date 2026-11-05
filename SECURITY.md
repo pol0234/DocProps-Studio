@@ -22,3 +22,4 @@ Ak objavíte bezpečnostný problém alebo zraniteľnosť:
 ## 3. Zrieknutie sa zodpovednosti (Disclaimer)
 
 Aplikácia je poskytovaná v stave „tak ako je“ (AS IS) bez akýchkoľvek záruk v zmysle licencie MIT. Používateľ je zodpovedný za dodržiavanie interných pravidiel svojej inštitúcie alebo organizácie pri správe dokumentov.
+

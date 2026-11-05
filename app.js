@@ -1,6 +1,6 @@
 /**
  * DocProps Studio - Desktop Application Engine
- * Native Electron + Web fallback engine with Live Visual Simulators & Universal XML editor
+ * With GSAP dynamic animations, context-aware document formatting, and live simulators.
  */
 
 // Global State
@@ -8,7 +8,8 @@ let currentZip = null;
 let currentFileInfo = {
   name: '',
   size: 0,
-  path: ''
+  path: '',
+  type: 'word' // 'word', 'pptx', 'xlsx', 'generic'
 };
 
 let activeSectionId = 'secIdentity';
@@ -92,7 +93,7 @@ function updateThemeIcon(theme) {
 }
 
 // -----------------------------------------------------------------------------
-// Navigation Between Sections
+// Navigation Between Sections with GSAP
 // -----------------------------------------------------------------------------
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item');
@@ -106,7 +107,20 @@ function initNavigation() {
 
       document.querySelectorAll('.form-section').forEach(sec => sec.classList.remove('active'));
       const targetSec = document.getElementById(secId);
-      if (targetSec) targetSec.classList.add('active');
+      if (targetSec) {
+        targetSec.classList.add('active');
+        // GSAP smooth section fade & slide
+        if (window.gsap) {
+          gsap.fromTo(targetSec, 
+            { opacity: 0, y: 10 }, 
+            { opacity: 1, y: 0, duration: 0.24, ease: 'power2.out' }
+          );
+          gsap.fromTo(targetSec.querySelectorAll('.input-card, .timing-module, .sim-window, .raw-xml-container'),
+            { opacity: 0, y: 8 },
+            { opacity: 1, y: 0, duration: 0.28, stagger: 0.03, ease: 'power2.out' }
+          );
+        }
+      }
 
       // Update Breadcrumb
       document.getElementById('bcCurrentSection').textContent = item.querySelector('span').textContent;
@@ -179,10 +193,22 @@ async function loadFile(file) {
 
 async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
   try {
+    const ext = fileName.split('.').pop().toLowerCase();
+    let docType = 'generic';
+
+    if (['docx', 'docm', 'dotx', 'dotm'].includes(ext)) {
+      docType = 'word';
+    } else if (['pptx', 'pptm', 'potx', 'potm'].includes(ext)) {
+      docType = 'pptx';
+    } else if (['xlsx', 'xlsm', 'xltx', 'xltm'].includes(ext)) {
+      docType = 'xlsx';
+    }
+
     currentFileInfo = {
       name: fileName,
       size: fileSize,
-      path: filePath
+      path: filePath,
+      type: docType
     };
 
     currentZip = await JSZip.loadAsync(buffer);
@@ -196,17 +222,112 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     document.getElementById('sidebarActions').style.display = 'flex';
     document.getElementById('toolbarControls').style.display = 'flex';
 
-    // Update UI headers
+    // Update UI headers & adapt to docType
+    applyDocumentTypeContext(docType);
     updateDocumentMetadataHeader();
     saveSnapshot();
     updateDiffSummary();
     updateLiveSimulators();
+
+    // GSAP Intro animation
+    if (window.gsap) {
+      gsap.from('#sidebarDocCard', { opacity: 0, x: -16, duration: 0.35, ease: 'power2.out' });
+      gsap.from('.bento-item', { opacity: 0, scale: 0.95, stagger: 0.05, duration: 0.3, ease: 'back.out(1.7)' });
+      gsap.from('#docTypeBanner', { opacity: 0, y: -8, duration: 0.3, ease: 'power1.out' });
+      gsap.from('.form-section.active .input-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.35, ease: 'power2.out' });
+    }
 
     setStatus(true, 'Dokument pripravený');
     showToastNotice(`Dokument '${fileName}' bol úspešne načítaný.`);
   } catch (err) {
     console.error(err);
     alert('Neplatný formát OpenXML archívu. Uistite sa, že súbor nie je poškodený.');
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Document Type Context Customization (Word vs PPTX vs Excel)
+// -----------------------------------------------------------------------------
+function applyDocumentTypeContext(type) {
+  const root = document.documentElement;
+  const wordFields = document.querySelectorAll('.doc-field-word');
+  const pptxFields = document.querySelectorAll('.doc-field-pptx');
+  const banner = document.getElementById('docTypeBanner');
+  const bannerTitle = document.getElementById('bannerDocTitle');
+  const bannerDesc = document.getElementById('bannerDocDesc');
+  const pill = document.getElementById('bcDocTypePill');
+  const navMetricsTitle = document.getElementById('navMetricsTitle');
+
+  pill.style.display = 'inline-block';
+
+  if (type === 'word') {
+    root.style.setProperty('--doc-brand-color', '#2563eb');
+    pill.textContent = 'WORD (DOCX)';
+    pill.style.borderColor = '#2563eb';
+    bannerTitle.textContent = 'Microsoft Word Dokument (.docx)';
+    bannerDesc.textContent = 'Zobrazené sú polia analýzy textu: slová, strany, znaky, riadky, odseky a šablóna.';
+    navMetricsTitle.textContent = 'Surová metrika (Slová/Strany)';
+
+    wordFields.forEach(el => el.style.display = 'flex');
+    pptxFields.forEach(el => el.style.display = 'none');
+
+    // Bento labels
+    document.getElementById('bentoMetric1Label').textContent = 'Počet slov';
+    document.getElementById('bentoMetric2Label').textContent = 'Rozsah';
+
+    // Simulator adjustments
+    document.getElementById('simRowPages').style.display = 'table-row';
+    document.getElementById('simRowWords').style.display = 'table-row';
+    document.getElementById('simRowCharacters').style.display = 'table-row';
+    document.getElementById('simRowLines').style.display = 'table-row';
+    document.getElementById('simRowParagraphs').style.display = 'table-row';
+    document.getElementById('simRowSlides').style.display = 'none';
+    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Word > Informácie';
+    document.getElementById('simOfficePagesLabel').textContent = 'Strany';
+  } else if (type === 'pptx') {
+    root.style.setProperty('--doc-brand-color', '#ea580c');
+    pill.textContent = 'POWERPOINT (PPTX)';
+    pill.style.borderColor = '#ea580c';
+    bannerTitle.textContent = 'Microsoft PowerPoint Prezentácia (.pptx)';
+    bannerDesc.textContent = 'Zobrazené sú polia prezentácie: snímky (slidy), poznámky a formát prezentácie.';
+    navMetricsTitle.textContent = 'Surová metrika (Snímky/Poznámky)';
+
+    wordFields.forEach(el => el.style.display = 'none');
+    pptxFields.forEach(el => el.style.display = 'flex');
+
+    // Bento labels
+    document.getElementById('bentoMetric1Label').textContent = 'Snímky';
+    document.getElementById('bentoMetric2Label').textContent = 'Poznámky';
+
+    // Simulator adjustments
+    document.getElementById('simRowPages').style.display = 'none';
+    document.getElementById('simRowWords').style.display = 'none';
+    document.getElementById('simRowCharacters').style.display = 'none';
+    document.getElementById('simRowLines').style.display = 'none';
+    document.getElementById('simRowParagraphs').style.display = 'none';
+    document.getElementById('simRowSlides').style.display = 'table-row';
+    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft PowerPoint > Informácie';
+    document.getElementById('simOfficePagesLabel').textContent = 'Snímky';
+  } else if (type === 'xlsx') {
+    root.style.setProperty('--doc-brand-color', '#16a34a');
+    pill.textContent = 'EXCEL (XLSX)';
+    pill.style.borderColor = '#16a34a';
+    bannerTitle.textContent = 'Microsoft Excel Tabuľka (.xlsx)';
+    bannerDesc.textContent = 'Zobrazené sú organizačné atribúty, autorstvo, čas úprav a verzia tabuľkového zošita.';
+    navMetricsTitle.textContent = 'Metrika zošita (Vlastnosti)';
+
+    wordFields.forEach(el => el.style.display = 'none');
+    pptxFields.forEach(el => el.style.display = 'none');
+
+    document.getElementById('bentoMetric1Label').textContent = 'Status';
+    document.getElementById('bentoWords').textContent = 'Zošit';
+    document.getElementById('bentoMetric2Label').textContent = 'Formát';
+    document.getElementById('bentoScope').textContent = 'Tabuľka';
+
+    document.getElementById('simRowPages').style.display = 'none';
+    document.getElementById('simRowWords').style.display = 'none';
+    document.getElementById('simRowSlides').style.display = 'none';
+    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Excel > Informácie';
   }
 }
 
@@ -222,23 +343,28 @@ function updateDocumentMetadataHeader() {
   document.getElementById('bcDocName').textContent = name;
 
   const badge = document.getElementById('sideTypeBadge');
+  const typeLabel = document.getElementById('sideTypeLabel');
   badge.className = 'doc-type-icon';
 
-  if (['docx', 'docm', 'dotx', 'dotm'].includes(ext)) {
+  if (currentFileInfo.type === 'word') {
     badge.classList.add('type-word');
     badge.textContent = 'DOC';
+    typeLabel.textContent = 'Microsoft Word';
     document.getElementById('packageFormat').textContent = 'WordprocessingML (DOCX)';
-  } else if (['pptx', 'pptm', 'potx', 'potm'].includes(ext)) {
+  } else if (currentFileInfo.type === 'pptx') {
     badge.classList.add('type-pptx');
     badge.textContent = 'PPT';
+    typeLabel.textContent = 'Microsoft PowerPoint';
     document.getElementById('packageFormat').textContent = 'PresentationML (PPTX)';
-  } else if (['xlsx', 'xlsm', 'xltx', 'xltm'].includes(ext)) {
+  } else if (currentFileInfo.type === 'xlsx') {
     badge.classList.add('type-xlsx');
     badge.textContent = 'XLS';
+    typeLabel.textContent = 'Microsoft Excel';
     document.getElementById('packageFormat').textContent = 'SpreadsheetML (XLSX)';
   } else {
     badge.classList.add('type-generic');
     badge.textContent = ext.toUpperCase().substring(0, 3);
+    typeLabel.textContent = 'OpenXML Archív';
   }
 }
 
@@ -291,7 +417,7 @@ function populateForm() {
   
   const rev = getTagValue(xmlDocs.core, 'revision') || '1';
   setVal('fRevision', rev);
-  document.getElementById('bentoRevision').textContent = `Rev. ${rev}`;
+  animateBentoText('bentoRevision', `Rev. ${rev}`);
 
   // Dates
   setVal('fCreated', isoToDatetimeLocal(getTagValue(xmlDocs.core, 'created')));
@@ -305,6 +431,8 @@ function populateForm() {
   const pages = getTagValue(xmlDocs.app, 'Pages') || '0';
   const words = getTagValue(xmlDocs.app, 'Words') || '0';
   const slides = getTagValue(xmlDocs.app, 'Slides') || '0';
+  const notes = getTagValue(xmlDocs.app, 'Notes') || '0';
+  const hiddenSlides = getTagValue(xmlDocs.app, 'HiddenSlides') || '0';
 
   setVal('fWords', words);
   setVal('fPages', pages);
@@ -313,6 +441,8 @@ function populateForm() {
   setVal('fParagraphs', getTagValue(xmlDocs.app, 'Paragraphs'));
   setVal('fLines', getTagValue(xmlDocs.app, 'Lines'));
   setVal('fSlides', slides);
+  setVal('fNotes', notes);
+  setVal('fHiddenSlides', hiddenSlides);
 
   setVal('fCompany', getTagValue(xmlDocs.app, 'Company'));
   setVal('fManager', getTagValue(xmlDocs.app, 'Manager'));
@@ -320,15 +450,14 @@ function populateForm() {
   setVal('fApplication', getTagValue(xmlDocs.app, 'Application'));
   setVal('fAppVersion', getTagValue(xmlDocs.app, 'AppVersion'));
 
-  // Update Bento Stats
-  if (parseInt(slides, 10) > 0) {
-    document.getElementById('bentoScope').textContent = `${slides} snímkov`;
-  } else if (parseInt(pages, 10) > 0) {
-    document.getElementById('bentoScope').textContent = `${pages} strán`;
-  } else {
-    document.getElementById('bentoScope').textContent = `-`;
+  // Update Bento Stats with animation
+  if (currentFileInfo.type === 'pptx') {
+    animateBentoText('bentoWords', `${slides}`);
+    animateBentoText('bentoScope', `${notes} pozn.`);
+  } else if (currentFileInfo.type === 'word') {
+    animateBentoText('bentoWords', Number(words).toLocaleString());
+    animateBentoText('bentoScope', `${pages} strán`);
   }
-  document.getElementById('bentoWords').textContent = Number(words).toLocaleString();
 
   // Custom properties
   renderCustomPropertiesTable();
@@ -361,6 +490,8 @@ function syncFormToXmlDocs() {
   setTagValue(xmlDocs.app, 'Paragraphs', 'Paragraphs', getVal('fParagraphs'));
   setTagValue(xmlDocs.app, 'Lines', 'Lines', getVal('fLines'));
   setTagValue(xmlDocs.app, 'Slides', 'Slides', getVal('fSlides'));
+  setTagValue(xmlDocs.app, 'Notes', 'Notes', getVal('fNotes'));
+  setTagValue(xmlDocs.app, 'HiddenSlides', 'HiddenSlides', getVal('fHiddenSlides'));
 
   setTagValue(xmlDocs.app, 'Company', 'Company', getVal('fCompany'));
   setTagValue(xmlDocs.app, 'Manager', 'Manager', getVal('fManager'));
@@ -370,13 +501,13 @@ function syncFormToXmlDocs() {
 
   // Update Bento in real time
   document.getElementById('bentoRevision').textContent = `Rev. ${getVal('fRevision') || '1'}`;
-  document.getElementById('bentoWords').textContent = Number(getVal('fWords') || 0).toLocaleString();
-  const slides = getVal('fSlides');
-  const pages = getVal('fPages');
-  if (parseInt(slides, 10) > 0) {
-    document.getElementById('bentoScope').textContent = `${slides} snímkov`;
-  } else if (parseInt(pages, 10) > 0) {
-    document.getElementById('bentoScope').textContent = `${pages} strán`;
+  
+  if (currentFileInfo.type === 'pptx') {
+    document.getElementById('bentoWords').textContent = `${getVal('fSlides') || 0}`;
+    document.getElementById('bentoScope').textContent = `${getVal('fNotes') || 0} pozn.`;
+  } else if (currentFileInfo.type === 'word') {
+    document.getElementById('bentoWords').textContent = Number(getVal('fWords') || 0).toLocaleString();
+    document.getElementById('bentoScope').textContent = `${getVal('fPages') || 0} strán`;
   }
 
   updateDiffSummary();
@@ -384,7 +515,7 @@ function syncFormToXmlDocs() {
 }
 
 // -----------------------------------------------------------------------------
-// Total Time Logic
+// Total Time Logic with GSAP pulse
 // -----------------------------------------------------------------------------
 function setTotalMinutes(minutes, triggerSync = true) {
   const m = parseInt(minutes, 10) || 0;
@@ -392,7 +523,7 @@ function setTotalMinutes(minutes, triggerSync = true) {
   document.getElementById('fTotalTimeRange').value = Math.min(m, 2400);
   document.getElementById('timingLargeDisplay').textContent = `${m} min`;
   document.getElementById('timingHumanConverted').textContent = `Zodpovedá: ${formatMinutesToHuman(m)}`;
-  document.getElementById('bentoTime').textContent = formatMinutesToShort(m);
+  animateBentoText('bentoTime', formatMinutesToShort(m));
 
   if (triggerSync) {
     syncFormToXmlDocs();
@@ -417,31 +548,73 @@ function formatMinutesToShort(m) {
 }
 
 // -----------------------------------------------------------------------------
-// Steppers for Words & Pages
+// Steppers for Words, Pages, Slides with GSAP Micro-interaction
 // -----------------------------------------------------------------------------
 function stepWords(delta) {
-  const current = parseInt(getVal('fWords') || '0', 10);
+  const el = document.getElementById('fWords');
+  const current = parseInt(el.value || '0', 10);
   const next = Math.max(0, current + delta);
-  setVal('fWords', next);
+  el.value = next;
+  pulseElement(el);
   syncFormToXmlDocs();
   setStatus(false, 'Upravený počet slov');
 }
 
 function stepPages(delta) {
-  const current = parseInt(getVal('fPages') || '0', 10);
+  const el = document.getElementById('fPages');
+  const current = parseInt(el.value || '0', 10);
   const next = Math.max(0, current + delta);
-  setVal('fPages', next);
+  el.value = next;
+  pulseElement(el);
   syncFormToXmlDocs();
   setStatus(false, 'Upravený počet strán');
 }
 
+function stepSlides(delta) {
+  const el = document.getElementById('fSlides');
+  const current = parseInt(el.value || '0', 10);
+  const next = Math.max(0, current + delta);
+  el.value = next;
+  pulseElement(el);
+  syncFormToXmlDocs();
+  setStatus(false, 'Upravený počet snímkov');
+}
+
+function pulseElement(elem) {
+  if (window.gsap) {
+    gsap.fromTo(elem, 
+      { scale: 1.05, borderColor: '#3b82f6' }, 
+      { scale: 1, borderColor: '#202227', duration: 0.22, ease: 'back.out(2)' }
+    );
+  }
+}
+
+function animateBentoText(elementId, newText) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (el.textContent === newText) return;
+
+  if (window.gsap) {
+    gsap.to(el, {
+      opacity: 0,
+      y: -4,
+      duration: 0.12,
+      onComplete: () => {
+        el.textContent = newText;
+        gsap.to(el, { opacity: 1, y: 0, duration: 0.16, ease: 'power2.out' });
+      }
+    });
+  } else {
+    el.textContent = newText;
+  }
+}
+
 // -----------------------------------------------------------------------------
-// Live Visual Simulators (Windows Explorer & Word Info)
+// Live Visual Simulators (Windows Explorer & Word/PowerPoint Info)
 // -----------------------------------------------------------------------------
 function updateLiveSimulators() {
   const snap = originalSnapshot;
 
-  // Helper to mark changed
   function setSim(id, currentVal, origKey) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -471,6 +644,7 @@ function updateLiveSimulators() {
   setSim('simTotalTime', `${totalMin} minút (${formatMinutesToShort(totalMin)})`, 'totalTime');
   setSim('simPages', getVal('fPages'), 'pages');
   setSim('simWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
+  setSim('simSlides', getVal('fSlides'), 'slides');
   setSim('simCharacters', Number(getVal('fCharacters') || 0).toLocaleString(), 'characters');
   setSim('simLines', getVal('fLines'), 'lines');
   setSim('simParagraphs', getVal('fParagraphs'), 'paragraphs');
@@ -478,10 +652,15 @@ function updateLiveSimulators() {
   setSim('simCreated', formatPrettyDate(getVal('fCreated')), 'created');
   setSim('simModified', formatPrettyDate(getVal('fModified')), 'modified');
 
-  // Word / Office Info Panel
+  // Office Info Panel
   setSim('simWordSize', formatBytes(currentFileInfo.size), 'size');
-  setSim('simWordPages', getVal('fPages'), 'pages');
-  setSim('simWordWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
+  if (currentFileInfo.type === 'pptx') {
+    setSim('simWordPages', `${getVal('fSlides') || 0} snímkov`, 'slides');
+    setSim('simWordWords', `${getVal('fNotes') || 0} poznámok`, 'notes');
+  } else {
+    setSim('simWordPages', getVal('fPages'), 'pages');
+    setSim('simWordWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
+  }
   setSim('simWordTotalTime', `${totalMin} minút`, 'totalTime');
   setSim('simWordCreated', formatPrettyDate(getVal('fCreated')), 'created');
   setSim('simWordModified', formatPrettyDate(getVal('fModified')), 'modified');
@@ -518,11 +697,12 @@ function saveSnapshot() {
     totalTime: getVal('fTotalTimeExact'),
     words: getVal('fWords'),
     pages: getVal('fPages'),
+    slides: getVal('fSlides'),
+    notes: getVal('fNotes'),
     characters: getVal('fCharacters'),
     charactersWithSpaces: getVal('fCharactersWithSpaces'),
     paragraphs: getVal('fParagraphs'),
     lines: getVal('fLines'),
-    slides: getVal('fSlides'),
     company: getVal('fCompany'),
     manager: getVal('fManager'),
     template: getVal('fTemplate'),
@@ -541,6 +721,7 @@ function updateDiffSummary() {
     { label: 'Čas úprav (minúty)', key: 'totalTime', current: getVal('fTotalTimeExact') },
     { label: 'Počet slov', key: 'words', current: getVal('fWords') },
     { label: 'Počet strán', key: 'pages', current: getVal('fPages') },
+    { label: 'Počet snímkov (PPTX)', key: 'slides', current: getVal('fSlides') },
     { label: 'Šablóna', key: 'template', current: getVal('fTemplate') },
     { label: 'Spoločnosť', key: 'company', current: getVal('fCompany') },
     { label: 'Dátum vytvorenia', key: 'created', current: getVal('fCreated') },
@@ -559,9 +740,11 @@ function updateDiffSummary() {
     }
   }
 
-  document.getElementById('diffCounter').textContent = diffs.length;
+  const badge = document.getElementById('diffCounter');
+  if (badge) badge.textContent = diffs.length;
 
   const tbody = document.getElementById('diffTableBody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   if (diffs.length === 0) {
@@ -592,7 +775,6 @@ function populateArchiveDropdown() {
 
   const files = Object.keys(currentZip.files).filter(name => !currentZip.files[name].dir);
   
-  // Sort with docProps first
   files.sort((a, b) => {
     if (a.startsWith('docProps/') && !b.startsWith('docProps/')) return -1;
     if (!a.startsWith('docProps/') && b.startsWith('docProps/')) return 1;
@@ -614,7 +796,6 @@ async function loadArchiveFileIntoEditor(path) {
   activeArchiveFile = path;
   const editor = document.getElementById('xmlCodeEditor');
   
-  // If it's one of our cached docs, serialize it
   const serializer = new XMLSerializer();
   let text = '';
 
@@ -871,7 +1052,6 @@ async function exportModifiedPackage() {
 // Interactive Events & Helpers
 // -----------------------------------------------------------------------------
 function initEvents() {
-  // Input changes
   document.querySelectorAll('.input-field').forEach(input => {
     input.addEventListener('input', () => {
       syncFormToXmlDocs();
@@ -879,7 +1059,6 @@ function initEvents() {
     });
   });
 
-  // Slider change
   document.getElementById('fTotalTimeRange').addEventListener('input', (e) => {
     setTotalMinutes(e.target.value);
   });
@@ -888,12 +1067,10 @@ function initEvents() {
     setTotalMinutes(e.target.value);
   });
 
-  // Quick Action Buttons
   document.getElementById('btnActionAnonymize').addEventListener('click', actionSanitize);
   document.getElementById('btnActionSyncDates').addEventListener('click', actionSyncDates);
   document.getElementById('btnActionClearTemplate').addEventListener('click', actionClearTemplate);
 
-  // Toolbar Buttons
   document.getElementById('btnExportPrimary').addEventListener('click', exportModifiedPackage);
   document.getElementById('btnOpenFileSecondary').addEventListener('click', () => {
     document.getElementById('systemFileInput').click();
@@ -901,17 +1078,19 @@ function initEvents() {
 
   document.getElementById('btnToggleDiff').addEventListener('click', () => {
     const d = document.getElementById('diffContainer');
-    d.style.display = d.style.display === 'none' ? 'block' : 'none';
+    const isShowing = d.style.display !== 'none';
+    d.style.display = isShowing ? 'none' : 'block';
+    if (!isShowing && window.gsap) {
+      gsap.fromTo(d, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' });
+    }
   });
 
   document.getElementById('btnCloseDiff').addEventListener('click', () => {
     document.getElementById('diffContainer').style.display = 'none';
   });
 
-  // Custom prop add
   document.getElementById('btnAddNewProp').addEventListener('click', addNewCustomProperty);
 
-  // XML Archive select
   document.getElementById('xmlArchiveFileSelect').addEventListener('change', (e) => {
     loadArchiveFileIntoEditor(e.target.value);
   });
@@ -924,7 +1103,6 @@ function initEvents() {
 
   document.getElementById('btnApplyXmlCode').addEventListener('click', applyArchiveCodeChanges);
 
-  // Sample document
   document.getElementById('btnLoadSample').addEventListener('click', loadSamplePackage);
 }
 
@@ -961,7 +1139,16 @@ function showToastNotice(msg) {
   const text = document.getElementById('toastNoticeText');
   text.textContent = msg;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  if (window.gsap) {
+    gsap.fromTo(toast, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.25, ease: 'back.out(1.5)' });
+  }
+  setTimeout(() => {
+    if (window.gsap) {
+      gsap.to(toast, { opacity: 0, y: 8, duration: 0.2, onComplete: () => toast.classList.remove('show') });
+    } else {
+      toast.classList.remove('show');
+    }
+  }, 3200);
 }
 
 function getVal(id) {

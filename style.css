@@ -1,6 +1,6 @@
 /* --------------------------------------------------------------------------
    DocProps Studio - Professional Pro Desktop Design System
-   Linear / Raycast / Apple Pro inspired utility aesthetic
+   Linear / Raycast / 21st.dev inspired dark obsidian utility aesthetic
    -------------------------------------------------------------------------- */
 
 :root {
@@ -8,21 +8,21 @@
   --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
 
   /* Dark Theme Palette (Default) */
-  --bg-app: #0c0d0e;
-  --bg-sidebar: #131416;
-  --bg-card: #191a1d;
-  --bg-card-hover: #1f2024;
-  --bg-input: #101113;
-  --bg-surface-elevated: #222327;
-  --bg-accent-subtle: rgba(59, 130, 246, 0.1);
+  --bg-app: #090a0b;
+  --bg-sidebar: #101113;
+  --bg-card: #151619;
+  --bg-card-hover: #1c1d22;
+  --bg-input: #0c0d0f;
+  --bg-surface-elevated: #222329;
+  --bg-accent-subtle: rgba(59, 130, 246, 0.12);
 
-  --text-primary: #ededed;
-  --text-secondary: #8a8f98;
-  --text-tertiary: #5d6169;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
   --text-accent: #3b82f6;
 
-  --border-subtle: #23252a;
-  --border-strong: #33363e;
+  --border-subtle: #202227;
+  --border-strong: #2e3138;
   --border-focus: #3b82f6;
 
   --badge-word: #2563eb;
@@ -31,36 +31,36 @@
 
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
 
   --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.45);
 }
 
 [data-theme="light"] {
-  --bg-app: #f6f8fa;
+  --bg-app: #f4f5f7;
   --bg-sidebar: #ffffff;
   --bg-card: #ffffff;
   --bg-card-hover: #f9fafb;
-  --bg-input: #f3f4f6;
-  --bg-surface-elevated: #e5e7eb;
+  --bg-input: #f1f3f5;
+  --bg-surface-elevated: #e2e4e8;
   --bg-accent-subtle: rgba(37, 99, 235, 0.08);
 
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
-  --text-tertiary: #9ca3af;
+  --text-primary: #09090b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
   --text-accent: #2563eb;
 
-  --border-subtle: #e5e7eb;
-  --border-strong: #d1d5db;
+  --border-subtle: #e4e4e7;
+  --border-strong: #d4d4d8;
   --border-focus: #2563eb;
 
   --badge-word: #1d4ed8;
   --badge-excel: #15803d;
   --badge-powerpoint: #c2410c;
 
-  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 /* Base Reset */
@@ -80,6 +80,33 @@ html, body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   user-select: none;
+}
+
+/* --------------------------------------------------------------------------
+   CUSTOM DARK SCROLLBAR (CRITICAL FIX FOR WHITE SCROLLBAR)
+   -------------------------------------------------------------------------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 1px solid var(--bg-app);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
 }
 
 /* App Shell Layout */
@@ -161,6 +188,18 @@ html, body {
   flex-direction: column;
   gap: 10px;
   box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.doc-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--doc-brand-color, var(--text-accent));
 }
 
 .doc-header-row {
@@ -170,8 +209,8 @@ html, body {
 }
 
 .doc-type-icon {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -180,11 +219,12 @@ html, body {
   font-weight: 700;
   font-size: 11px;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.type-word { background: var(--badge-word); }
-.type-pptx { background: var(--badge-powerpoint); }
-.type-xlsx { background: var(--badge-excel); }
+.type-word { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.type-pptx { background: linear-gradient(135deg, #ea580c, #c2410c); }
+.type-xlsx { background: linear-gradient(135deg, #16a34a, #15803d); }
 .type-generic { background: var(--text-tertiary); }
 
 .doc-title-block {
@@ -198,6 +238,14 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.doc-type-label {
+  font-size: 10px;
+  color: var(--doc-brand-color, var(--text-accent));
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .doc-filesize {
@@ -218,6 +266,11 @@ html, body {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xs);
   padding: 6px 8px;
+  transition: all var(--transition-fast);
+}
+
+.bento-item:hover {
+  border-color: var(--border-strong);
 }
 
 .bento-label {
@@ -229,7 +282,7 @@ html, body {
 }
 
 .bento-value {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
   font-family: var(--font-mono);
@@ -277,7 +330,7 @@ html, body {
 
 .nav-item.active {
   background: var(--bg-card-hover);
-  color: var(--text-accent);
+  color: var(--doc-brand-color, var(--text-accent));
   font-weight: 600;
 }
 
@@ -293,6 +346,7 @@ html, body {
   background: var(--bg-input);
   color: var(--text-tertiary);
   font-family: var(--font-mono);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Sidebar Quick Actions */
@@ -340,6 +394,17 @@ html, body {
 .breadcrumb-path .current {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+.doc-type-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--doc-brand-color, var(--text-accent));
+  margin-left: 8px;
 }
 
 .toolbar-controls {
@@ -501,16 +566,10 @@ html, body {
   display: none;
   max-width: 900px;
   margin: 0 auto;
-  animation: fadeIn 150ms ease;
 }
 
 .form-section.active {
   display: block;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(3px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .section-header {
@@ -534,6 +593,33 @@ html, body {
   margin-top: 2px;
 }
 
+/* Format Banner (Informs user about active document type) */
+.doc-type-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--doc-brand-color, var(--text-accent));
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.doc-type-banner-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doc-type-banner-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
 /* Card Containers */
 .card-grid {
   display: grid;
@@ -554,6 +640,11 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input-card:hover {
+  border-color: var(--border-strong);
 }
 
 .input-card.span-2 {
@@ -590,11 +681,12 @@ html, body {
   font-family: inherit;
   font-size: 12px;
   outline: none;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .input-field:focus {
   border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px var(--bg-accent-subtle);
 }
 
 .input-field.mono {
@@ -663,11 +755,17 @@ textarea.input-field {
   border-radius: var(--radius-xs);
   cursor: pointer;
   font-family: var(--font-mono);
+  transition: all var(--transition-fast);
 }
 
 .stepper-btn:hover {
   background: var(--bg-surface-elevated);
   color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.stepper-btn:active {
+  transform: scale(0.95);
 }
 
 /* Visual Simulators */

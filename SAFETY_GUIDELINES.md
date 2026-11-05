@@ -34,3 +34,4 @@ Pred odovzdaním alebo zverejnením upraveného dokumentu odporúčame skontrolo
    - Overte, či nastavený celkový čas zodpovedá požadovanému rozsahu práce (napr. 180 až 720 minút pri záverečných prácach).
 4. **Náhľad v simulátore:**
    - Prepnite sa na záložku **Živý simulátor (Windows & Word)** a overte, ako presne uvidia vlastnosti súboru iné osoby.
+
