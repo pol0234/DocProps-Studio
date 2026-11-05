@@ -42,7 +42,24 @@ function createWindow() {
   }
 }
 
-// IPC Handlers for Native Dialogs
+// IPC Handlers for Native Dialogs & System Integration
+ipcMain.handle('theme:set', (event, theme) => {
+  const isLight = theme === 'light';
+  nativeTheme.themeSource = isLight ? 'light' : 'dark';
+  if (mainWindow && !mainWindow.isDestroyed() && mainWindow.setTitleBarOverlay) {
+    try {
+      mainWindow.setTitleBarOverlay({
+        color: isLight ? '#ffffff' : '#0e1014',
+        symbolColor: isLight ? '#0f172a' : '#ededed',
+        height: 38
+      });
+    } catch (e) {
+      // Platform may not support titleBarOverlay
+    }
+  }
+  return true;
+});
+
 ipcMain.handle('dialog:openFile', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openFile'],
@@ -62,7 +79,7 @@ ipcMain.handle('dialog:openFile', async () => {
     filePath,
     fileName: path.basename(filePath),
     fileSize: fs.statSync(filePath).size,
-    buffer: Array.from(buffer)
+    buffer: buffer
   };
 });
 
@@ -73,7 +90,7 @@ ipcMain.handle('file:readFromPath', async (event, filePath) => {
     filePath,
     fileName: path.basename(filePath),
     fileSize: fs.statSync(filePath).size,
-    buffer: Array.from(buffer)
+    buffer: buffer
   };
 });
 

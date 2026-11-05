@@ -144,6 +144,7 @@ function initAmbientHeroCanvas() {
       ctx.fill();
 
       // Constellation lines
+      const isLightMode = document.documentElement.getAttribute('data-theme') === 'light';
       for (let j = i + 1; j < numParticles; j++) {
         const p2 = particles[j];
         const dx = p.x - p2.x;
@@ -153,7 +154,9 @@ function initAmbientHeroCanvas() {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(p2.x, p2.y);
-          ctx.strokeStyle = `rgba(255, 255, 255, ${0.05 * (1 - dist / 95)})`;
+          ctx.strokeStyle = isLightMode
+            ? `rgba(15, 23, 42, ${0.07 * (1 - dist / 95)})`
+            : `rgba(255, 255, 255, ${0.06 * (1 - dist / 95)})`;
           ctx.lineWidth = 0.7;
           ctx.stroke();
         }
@@ -204,6 +207,9 @@ function initTheme() {
   const savedTheme = localStorage.getItem('docprops-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeIcon(savedTheme);
+  if (window.electronAPI && window.electronAPI.setTheme) {
+    window.electronAPI.setTheme(savedTheme);
+  }
 
   document.getElementById('btnThemeToggle').addEventListener('click', () => {
     const cur = document.documentElement.getAttribute('data-theme');
@@ -211,6 +217,9 @@ function initTheme() {
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('docprops-theme', next);
     updateThemeIcon(next);
+    if (window.electronAPI && window.electronAPI.setTheme) {
+      window.electronAPI.setTheme(next);
+    }
   });
 }
 
@@ -347,17 +356,32 @@ function initDragAndDrop() {
 
 async function loadFile(file) {
   try {
+    // If running in Electron and file.path is present, read directly through native Node filesystem
+    if (window.electronAPI && file.path) {
+      const fileData = await window.electronAPI.readFromPath(file.path);
+      if (fileData && fileData.buffer) {
+        await loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+        return;
+      }
+    }
     const arrayBuffer = await file.arrayBuffer();
-    loadFromBinaryBuffer(arrayBuffer, file.name, file.size, file.path || file.name);
+    await loadFromBinaryBuffer(arrayBuffer, file.name, file.size, file.path || file.name);
   } catch (err) {
-    console.error(err);
-    alert('Nepodarilo sa načítať súbor: ' + err.message);
+    console.error('Chyba pri čítaní súboru:', err);
+    alert('Nepodarilo sa načítať súbor:\n' + (err.message || err));
   }
 }
 
 async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
   try {
-    const ext = fileName.split('.').pop().toLowerCase();
+    const ext = (fileName || '').split('.').pop().toLowerCase();
+
+    // Friendly alert for legacy binary formats
+    if (['doc', 'xls', 'ppt'].includes(ext)) {
+      alert(`Súbor "${fileName}" je v staršom binárnom formáte Microsoft Office (.${ext}).\n\nDocProps Studio podporuje moderné otvorené štandardy OpenXML (.docx, .xlsx, .pptx).\nProsím, otvorte súbor v Office a zvoľte "Uložiť ako" s príponou .${ext}x.`);
+      return;
+    }
+
     let docType = 'generic';
 
     if (['docx', 'docm', 'dotx', 'dotm'].includes(ext)) {
@@ -375,7 +399,19 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
       type: docType
     };
 
-    currentZip = await JSZip.loadAsync(buffer);
+    // Normalize buffer for JSZip
+    let zipInput = buffer;
+    if (Array.isArray(buffer)) {
+      zipInput = new Uint8Array(buffer);
+    } else if (buffer && buffer.data && Array.isArray(buffer.data)) {
+      zipInput = new Uint8Array(buffer.data);
+    } else if (buffer instanceof ArrayBuffer) {
+      zipInput = new Uint8Array(buffer);
+    } else if (buffer && buffer.buffer && buffer.buffer instanceof ArrayBuffer) {
+      zipInput = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    }
+
+    currentZip = await JSZip.loadAsync(zipInput);
     await parseArchiveMetadata();
     populateArchiveDropdown();
 
@@ -408,8 +444,8 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     setStatus(true, 'Dokument pripravený');
     showToastNotice(`Dokument '${fileName}' bol úspešne načítaný.`);
   } catch (err) {
-    console.error(err);
-    alert('Neplatný formát OpenXML archívu. Uistite sa, že súbor nie je poškodený.');
+    console.error('Chyba načítania OpenXML:', err);
+    alert('Neplatný formát OpenXML archívu alebo poškodený súbor:\n' + (err.message || err));
   }
 }
 
