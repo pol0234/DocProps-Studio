@@ -451,7 +451,7 @@ function applyDocumentTypeContext(type) {
   const brandIconPpt = document.getElementById('brandIconPpt');
 
   if (type === 'word') {
-    if (brandName) brandName.textContent = 'DocProps';
+    if (brandName) { brandName.innerHTML = '<span class="brand-prefix">Doc</span><span class="brand-suffix">Props</span>'; brandName.className = 'brand-name'; }
     if (brandTag) {
       brandTag.textContent = 'DOCX';
       brandTag.className = 'brand-tag';
@@ -483,7 +483,7 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simOfficePagesRow').style.display = 'table-row';
     document.getElementById('simOfficeWordsRow').style.display = 'table-row';
   } else if (type === 'pptx') {
-    if (brandName) brandName.textContent = 'SlideProps';
+    if (brandName) { brandName.innerHTML = '<span class="brand-prefix">Slide</span><span class="brand-suffix">Props</span>'; brandName.className = 'brand-name pptx-theme'; }
     if (brandTag) {
       brandTag.textContent = 'PPTX';
       brandTag.className = 'brand-tag pptx-theme';
@@ -515,7 +515,7 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simOfficePagesRow').style.display = 'none';
     document.getElementById('simOfficeWordsRow').style.display = 'none';
   } else if (type === 'xlsx') {
-    if (brandName) brandName.textContent = 'ExcelProps';
+    if (brandName) { brandName.innerHTML = '<span class="brand-prefix">Excel</span><span class="brand-suffix">Props</span>'; brandName.className = 'brand-name excel-theme'; }
     if (brandTag) {
       brandTag.textContent = 'XLSX';
       brandTag.className = 'brand-tag excel-theme';
@@ -1640,14 +1640,26 @@ function setStatus(isSynced, text) {
   const bullet = document.getElementById('statusBullet');
   const txt = document.getElementById('statusText');
   const topDot = document.getElementById('topStatusDot');
+  const topCapsule = document.getElementById('topStatusCapsule');
+  const topLabel = document.getElementById('topStatusLabel');
 
   if (isSynced) {
     if (bullet) bullet.className = 'status-dot synced';
-    if (topDot) topDot.className = 'status-dot synced';
+    if (topDot) topDot.className = 'status-beacon-core synced';
+    if (topCapsule) {
+      topCapsule.className = 'status-indicator-badge synced';
+      topCapsule.title = 'Všetky zmeny sú synchronizované s archívom';
+    }
+    if (topLabel) topLabel.textContent = 'SYNC';
     if (txt) txt.textContent = text || 'Pripravené';
   } else {
     if (bullet) bullet.className = 'status-dot dirty';
-    if (topDot) topDot.className = 'status-dot dirty';
+    if (topDot) topDot.className = 'status-beacon-core dirty';
+    if (topCapsule) {
+      topCapsule.className = 'status-indicator-badge dirty';
+      topCapsule.title = 'Máte neuložené zmeny v atribútoch';
+    }
+    if (topLabel) topLabel.textContent = 'ZMENY';
     if (txt) txt.textContent = text || 'Máte neuložené zmeny';
   }
 }
