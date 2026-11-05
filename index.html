@@ -53,28 +53,28 @@
             <div id="sideTypeBadge" class="doc-type-icon type-word">DOC</div>
             <div class="doc-title-block">
               <div id="sideFileName" class="doc-filename">dokument.docx</div>
-              <div id="sideTypeLabel" class="doc-type-label">Microsoft Word</div>
-              <div id="sideFileSize" class="doc-filesize">0 KB • OOXML</div>
+              <div id="sideTypeLabel" class="doc-format-badge">Microsoft Word</div>
+              <div id="sideFileSize" style="font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono);">0 KB • OOXML</div>
             </div>
           </div>
 
-          <!-- Mini Bento Stats -->
-          <div class="bento-stats">
-            <div class="bento-item">
-              <div class="bento-label">Čas úprav</div>
-              <div id="bentoTime" class="bento-value">0m</div>
+          <!-- Clean Aligned Document Metrics (Linear style) -->
+          <div class="doc-metrics-list">
+            <div class="metric-row">
+              <span class="metric-row-label">Čas úprav</span>
+              <span id="sideMetaTime" class="metric-row-value">0m</span>
             </div>
-            <div class="bento-item">
-              <div class="bento-label">Revízia</div>
-              <div id="bentoRevision" class="bento-value">Rev. 1</div>
+            <div class="metric-row" id="sideMetaRevRow">
+              <span class="metric-row-label">Revízia</span>
+              <span id="sideMetaRev" class="metric-row-value">Rev. 1</span>
             </div>
-            <div class="bento-item" id="bentoWordsItem">
-              <div class="bento-label" id="bentoMetric1Label">Počet slov</div>
-              <div id="bentoWords" class="bento-value">0</div>
+            <div class="metric-row" id="sideMetaMetric1Row">
+              <span id="sideMetaMetric1Label" class="metric-row-label">Počet slov</span>
+              <span id="sideMetaMetric1Val" class="metric-row-value">0</span>
             </div>
-            <div class="bento-item" id="bentoScopeItem">
-              <div class="bento-label" id="bentoMetric2Label">Rozsah</div>
-              <div id="bentoScope" class="bento-value">0 strán</div>
+            <div class="metric-row" id="sideMetaMetric2Row">
+              <span id="sideMetaMetric2Label" class="metric-row-label">Rozsah</span>
+              <span id="sideMetaMetric2Val" class="metric-row-value">0 strán</span>
             </div>
           </div>
         </div>
@@ -131,7 +131,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
             Zosúladiť dátumy
           </button>
-          <button id="btnActionClearTemplate" class="btn btn-secondary btn-sm" style="justify-content: flex-start;">
+          <button id="btnActionClearTemplate" class="btn btn-secondary btn-sm doc-action-word-only" style="justify-content: flex-start;">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
             Očistiť šablónu (Normal.dotm)
           </button>
@@ -193,15 +193,6 @@
 
           <!-- View 2: Form Sections -->
           <div id="viewFormSections" style="display: none;">
-            
-            <!-- Dynamic Context Document Banner -->
-            <div id="docTypeBanner" class="doc-type-banner">
-              <div class="doc-type-banner-title">
-                <span id="bannerDocIcon"></span>
-                <span id="bannerDocTitle">Microsoft Word Dokument</span>
-              </div>
-              <div class="doc-type-banner-desc" id="bannerDocDesc">Zobrazené sú polia špecifické pre formát DOCX.</div>
-            </div>
 
             <!-- SECTION 1: Identity & Authorship -->
             <section id="secIdentity" class="form-section active">
@@ -448,8 +439,19 @@
                   <input type="number" id="fHiddenSlides" min="0" class="input-field mono">
                 </div>
 
+                <!-- EXCEL SPECIFIC INFO CARD -->
+                <div class="input-card span-2 doc-field-xlsx" style="display: none; background: rgba(22, 163, 74, 0.04); border-color: rgba(22, 163, 74, 0.25);">
+                  <div class="input-label-row">
+                    <label class="input-label" style="color: #4ade80;">Špecifikácia tabuľkového zošita Excel (XLSX)</label>
+                    <span class="input-badge" style="color: #4ade80; border-color: rgba(22, 163, 74, 0.3);">SpreadsheetML</span>
+                  </div>
+                  <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                    V tabuľkových zošitoch Excel (XLSX) sa štatistika textových slov a strán neeviduje v balíčku <code>docProps/app.xml</code>. Organizačné atribúty, autorstvo, zaznamenaný čas úprav a verzia aplikácie sú plne nastaviteľné v nasledujúcich poliach.
+                  </p>
+                </div>
+
                 <!-- SYSTEM TRACES & IDENTIFIERS -->
-                <div class="input-card span-2 doc-field-template">
+                <div class="input-card span-2 doc-field-word">
                   <div class="input-label-row">
                     <label class="input-label" for="fTemplate">Cesta k šablóne (Template)</label>
                     <span class="input-badge">Template</span>

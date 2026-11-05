@@ -232,8 +232,7 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     // GSAP Intro animation
     if (window.gsap) {
       gsap.from('#sidebarDocCard', { opacity: 0, x: -16, duration: 0.35, ease: 'power2.out' });
-      gsap.from('.bento-item', { opacity: 0, scale: 0.95, stagger: 0.05, duration: 0.3, ease: 'back.out(1.7)' });
-      gsap.from('#docTypeBanner', { opacity: 0, y: -8, duration: 0.3, ease: 'power1.out' });
+      gsap.from('.metric-row', { opacity: 0, x: -8, stagger: 0.04, duration: 0.25, ease: 'power1.out' });
       gsap.from('.form-section.active .input-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.35, ease: 'power2.out' });
     }
 
@@ -252,9 +251,8 @@ function applyDocumentTypeContext(type) {
   const root = document.documentElement;
   const wordFields = document.querySelectorAll('.doc-field-word');
   const pptxFields = document.querySelectorAll('.doc-field-pptx');
-  const banner = document.getElementById('docTypeBanner');
-  const bannerTitle = document.getElementById('bannerDocTitle');
-  const bannerDesc = document.getElementById('bannerDocDesc');
+  const xlsxFields = document.querySelectorAll('.doc-field-xlsx');
+  const wordActions = document.querySelectorAll('.doc-action-word-only');
   const pill = document.getElementById('bcDocTypePill');
   const navMetricsTitle = document.getElementById('navMetricsTitle');
 
@@ -264,16 +262,17 @@ function applyDocumentTypeContext(type) {
     root.style.setProperty('--doc-brand-color', '#2563eb');
     pill.textContent = 'WORD (DOCX)';
     pill.style.borderColor = '#2563eb';
-    bannerTitle.textContent = 'Microsoft Word Dokument (.docx)';
-    bannerDesc.textContent = 'Zobrazené sú polia analýzy textu: slová, strany, znaky, riadky, odseky a šablóna.';
+    pill.style.color = '#3b82f6';
     navMetricsTitle.textContent = 'Surová metrika (Slová/Strany)';
 
     wordFields.forEach(el => el.style.display = 'flex');
     pptxFields.forEach(el => el.style.display = 'none');
+    xlsxFields.forEach(el => el.style.display = 'none');
+    wordActions.forEach(el => el.style.display = 'flex');
 
-    // Bento labels
-    document.getElementById('bentoMetric1Label').textContent = 'Počet slov';
-    document.getElementById('bentoMetric2Label').textContent = 'Rozsah';
+    // Sidebar metric labels
+    document.getElementById('sideMetaMetric1Label').textContent = 'Počet slov';
+    document.getElementById('sideMetaMetric2Label').textContent = 'Rozsah';
 
     // Simulator adjustments
     document.getElementById('simRowPages').style.display = 'table-row';
@@ -288,16 +287,17 @@ function applyDocumentTypeContext(type) {
     root.style.setProperty('--doc-brand-color', '#ea580c');
     pill.textContent = 'POWERPOINT (PPTX)';
     pill.style.borderColor = '#ea580c';
-    bannerTitle.textContent = 'Microsoft PowerPoint Prezentácia (.pptx)';
-    bannerDesc.textContent = 'Zobrazené sú polia prezentácie: snímky (slidy), poznámky a formát prezentácie.';
+    pill.style.color = '#f97316';
     navMetricsTitle.textContent = 'Surová metrika (Snímky/Poznámky)';
 
     wordFields.forEach(el => el.style.display = 'none');
     pptxFields.forEach(el => el.style.display = 'flex');
+    xlsxFields.forEach(el => el.style.display = 'none');
+    wordActions.forEach(el => el.style.display = 'none');
 
-    // Bento labels
-    document.getElementById('bentoMetric1Label').textContent = 'Snímky';
-    document.getElementById('bentoMetric2Label').textContent = 'Poznámky';
+    // Sidebar metric labels
+    document.getElementById('sideMetaMetric1Label').textContent = 'Počet snímkov';
+    document.getElementById('sideMetaMetric2Label').textContent = 'Poznámky';
 
     // Simulator adjustments
     document.getElementById('simRowPages').style.display = 'none';
@@ -312,20 +312,26 @@ function applyDocumentTypeContext(type) {
     root.style.setProperty('--doc-brand-color', '#16a34a');
     pill.textContent = 'EXCEL (XLSX)';
     pill.style.borderColor = '#16a34a';
-    bannerTitle.textContent = 'Microsoft Excel Tabuľka (.xlsx)';
-    bannerDesc.textContent = 'Zobrazené sú organizačné atribúty, autorstvo, čas úprav a verzia tabuľkového zošita.';
-    navMetricsTitle.textContent = 'Metrika zošita (Vlastnosti)';
+    pill.style.color = '#22c55e';
+    navMetricsTitle.textContent = 'Metrika a vlastnosti zošita';
 
     wordFields.forEach(el => el.style.display = 'none');
     pptxFields.forEach(el => el.style.display = 'none');
+    xlsxFields.forEach(el => el.style.display = 'flex');
+    wordActions.forEach(el => el.style.display = 'none');
 
-    document.getElementById('bentoMetric1Label').textContent = 'Status';
-    document.getElementById('bentoWords').textContent = 'Zošit';
-    document.getElementById('bentoMetric2Label').textContent = 'Formát';
-    document.getElementById('bentoScope').textContent = 'Tabuľka';
+    // Sidebar metric labels
+    document.getElementById('sideMetaMetric1Label').textContent = 'Typ zošita';
+    document.getElementById('sideMetaMetric1Val').textContent = 'Tabuľka (XLSX)';
+    document.getElementById('sideMetaMetric2Label').textContent = 'Stav zošita';
+    document.getElementById('sideMetaMetric2Val').textContent = 'Odomknutý';
 
+    // Simulator adjustments
     document.getElementById('simRowPages').style.display = 'none';
     document.getElementById('simRowWords').style.display = 'none';
+    document.getElementById('simRowCharacters').style.display = 'none';
+    document.getElementById('simRowLines').style.display = 'none';
+    document.getElementById('simRowParagraphs').style.display = 'none';
     document.getElementById('simRowSlides').style.display = 'none';
     document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Excel > Informácie';
   }
@@ -417,7 +423,7 @@ function populateForm() {
   
   const rev = getTagValue(xmlDocs.core, 'revision') || '1';
   setVal('fRevision', rev);
-  animateBentoText('bentoRevision', `Rev. ${rev}`);
+  animateMetricText('sideMetaRev', `Rev. ${rev}`);
 
   // Dates
   setVal('fCreated', isoToDatetimeLocal(getTagValue(xmlDocs.core, 'created')));
@@ -450,13 +456,16 @@ function populateForm() {
   setVal('fApplication', getTagValue(xmlDocs.app, 'Application'));
   setVal('fAppVersion', getTagValue(xmlDocs.app, 'AppVersion'));
 
-  // Update Bento Stats with animation
+  // Update Sidebar Metrics with animation
   if (currentFileInfo.type === 'pptx') {
-    animateBentoText('bentoWords', `${slides}`);
-    animateBentoText('bentoScope', `${notes} pozn.`);
+    animateMetricText('sideMetaMetric1Val', `${slides} snímkov`);
+    animateMetricText('sideMetaMetric2Val', `${notes} pozn.`);
   } else if (currentFileInfo.type === 'word') {
-    animateBentoText('bentoWords', Number(words).toLocaleString());
-    animateBentoText('bentoScope', `${pages} strán`);
+    animateMetricText('sideMetaMetric1Val', Number(words).toLocaleString());
+    animateMetricText('sideMetaMetric2Val', `${pages} strán`);
+  } else if (currentFileInfo.type === 'xlsx') {
+    animateMetricText('sideMetaMetric1Val', 'Tabuľka (XLSX)');
+    animateMetricText('sideMetaMetric2Val', 'Odomknutý');
   }
 
   // Custom properties
@@ -499,15 +508,21 @@ function syncFormToXmlDocs() {
   setTagValue(xmlDocs.app, 'Application', 'Application', getVal('fApplication'));
   setTagValue(xmlDocs.app, 'AppVersion', 'AppVersion', getVal('fAppVersion'));
 
-  // Update Bento in real time
-  document.getElementById('bentoRevision').textContent = `Rev. ${getVal('fRevision') || '1'}`;
+  // Update Sidebar Metrics in real time
+  const sideRevEl = document.getElementById('sideMetaRev');
+  if (sideRevEl) sideRevEl.textContent = `Rev. ${getVal('fRevision') || '1'}`;
   
+  const m1 = document.getElementById('sideMetaMetric1Val');
+  const m2 = document.getElementById('sideMetaMetric2Val');
   if (currentFileInfo.type === 'pptx') {
-    document.getElementById('bentoWords').textContent = `${getVal('fSlides') || 0}`;
-    document.getElementById('bentoScope').textContent = `${getVal('fNotes') || 0} pozn.`;
+    if (m1) m1.textContent = `${getVal('fSlides') || 0} snímkov`;
+    if (m2) m2.textContent = `${getVal('fNotes') || 0} pozn.`;
   } else if (currentFileInfo.type === 'word') {
-    document.getElementById('bentoWords').textContent = Number(getVal('fWords') || 0).toLocaleString();
-    document.getElementById('bentoScope').textContent = `${getVal('fPages') || 0} strán`;
+    if (m1) m1.textContent = Number(getVal('fWords') || 0).toLocaleString();
+    if (m2) m2.textContent = `${getVal('fPages') || 0} strán`;
+  } else if (currentFileInfo.type === 'xlsx') {
+    if (m1) m1.textContent = 'Tabuľka (XLSX)';
+    if (m2) m2.textContent = 'Odomknutý';
   }
 
   updateDiffSummary();
@@ -523,7 +538,7 @@ function setTotalMinutes(minutes, triggerSync = true) {
   document.getElementById('fTotalTimeRange').value = Math.min(m, 2400);
   document.getElementById('timingLargeDisplay').textContent = `${m} min`;
   document.getElementById('timingHumanConverted').textContent = `Zodpovedá: ${formatMinutesToHuman(m)}`;
-  animateBentoText('bentoTime', formatMinutesToShort(m));
+  animateMetricText('sideMetaTime', formatMinutesToShort(m));
 
   if (triggerSync) {
     syncFormToXmlDocs();
@@ -589,7 +604,7 @@ function pulseElement(elem) {
   }
 }
 
-function animateBentoText(elementId, newText) {
+function animateMetricText(elementId, newText) {
   const el = document.getElementById(elementId);
   if (!el) return;
   if (el.textContent === newText) return;
@@ -597,7 +612,7 @@ function animateBentoText(elementId, newText) {
   if (window.gsap) {
     gsap.to(el, {
       opacity: 0,
-      y: -4,
+      y: -3,
       duration: 0.12,
       onComplete: () => {
         el.textContent = newText;
@@ -608,6 +623,7 @@ function animateBentoText(elementId, newText) {
     el.textContent = newText;
   }
 }
+const animateBentoText = animateMetricText;
 
 // -----------------------------------------------------------------------------
 // Live Visual Simulators (Windows Explorer & Word/PowerPoint Info)

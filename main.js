@@ -1,8 +1,11 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
+
+// Force dark mode globally in Electron to guarantee dark system scrollbars
+nativeTheme.themeSource = 'dark';
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -11,10 +14,10 @@ function createWindow() {
     minWidth: 960,
     minHeight: 640,
     title: 'DocProps Studio',
-    backgroundColor: '#0c0d0e',
+    backgroundColor: '#090a0c',
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#141517',
+      color: '#0f1013',
       symbolColor: '#ededed',
       height: 38
     },
