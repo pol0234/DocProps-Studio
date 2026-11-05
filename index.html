@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocProps Studio</title>
+  <title>DocProps Studio - Office Metadata Engine</title>
   <link rel="stylesheet" href="style.css">
   <script src="vendor/jszip.min.js"></script>
   <script src="vendor/gsap.min.js"></script>
@@ -12,478 +12,463 @@
 
   <div class="app-shell">
     
-    <!-- Unified Craft Studio Header (Responsive & Drag-capable) -->
-    <header class="studio-header">
+    <!-- Unified Studio Header (Apple / Linear Craft Standard) -->
+    <header class="studio-header" id="studioHeader">
       
-      <!-- Brand & Document Info Cluster -->
+      <!-- Brand & Document Capsule -->
       <div class="header-brand-cluster">
         <div class="brand-badge-box">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
             <line x1="16" y1="17" x2="8" y2="17"></line>
           </svg>
         </div>
+        
         <div class="brand-text">
           <span class="brand-name">DocProps</span>
-          <span class="brand-tag">PRO</span>
+          <span class="brand-tag">STUDIO</span>
         </div>
-        
-        <div class="header-divider"></div>
 
-        <!-- Document Context Indicator (Reactive breadcrumb) -->
-        <div class="header-doc-indicator" id="headerDocIndicator">
-          <span id="headerStatusDot" class="status-dot idle" title="Stav synchronizácie"></span>
-          <span id="bcDocTypePill" class="doc-badge-pill" style="display: none;">DOCX</span>
-          <span id="bcDocName" class="doc-title-text" title="Žiadny otvorený súbor">Žiadny súbor</span>
-          <span id="headerContextSep" class="breadcrumb-chevron" style="display: none;">›</span>
-          <span id="bcCurrentSection" class="section-title-text" style="display: none;">Identita</span>
+        <!-- Active Document Capsule -->
+        <div class="doc-file-capsule" id="docFileCapsule" style="display: none;">
+          <span id="topTypeBadge" class="type-pill word">DOCX</span>
+          <span id="topFileName" class="file-name" title="">dokument.docx</span>
+          <span id="topFileSize" class="file-size">0 KB</span>
+          <span id="topStatusDot" class="status-dot synced" title="Všetky zmeny uložené"></span>
         </div>
       </div>
 
-      <!-- Action Cluster (Safe from Windows titleBarOverlay buttons) -->
-      <div class="header-action-cluster">
-        <button id="btnLoadSample" class="btn btn-ghost btn-sm" title="Otvoriť ukážkový DOCX dokument">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>
-          <span class="btn-text">Vzorka</span>
+      <!-- Center: Segmented Horizon Navigation Tabs (Visible when document loaded) -->
+      <nav class="horizon-nav-tabs" id="horizonNavTabs" style="display: none;">
+        <button class="nav-tab-btn active" data-section="secIdentity" title="Základné atribúty a autor (core.xml)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          <span>Identita &amp; Autor</span>
         </button>
 
-        <div class="toolbar-controls" id="toolbarControls" style="display: none;">
-          <button id="btnToggleDiff" class="btn btn-secondary btn-sm" title="Zobraziť zoznam zmien oproti originálu">
+        <button class="nav-tab-btn" data-section="secTiming" title="Čas úprav a história revízií (TotalTime, Created, Modified)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Čas &amp; Revízie</span>
+        </button>
+
+        <button class="nav-tab-btn" data-section="secMetrics" title="Surové počítadlá slov, strán a aplikácie (app.xml)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span id="navMetricsTitle">Metrika obsahu</span>
+        </button>
+
+        <button class="nav-tab-btn" data-section="secSimulator" title="Živý náhľad v Prieskumníkovi Windows a MS Office">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Živý simulátor</span>
+        </button>
+
+        <button class="nav-tab-btn" data-section="secCustom" title="Vlastné atribúty a premenné (custom.xml)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          <span>Vlastné atribúty</span>
+        </button>
+
+        <button class="nav-tab-btn" data-section="secXml" title="Priama úprava XML súborov v archíve">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          <span>XML archív</span>
+        </button>
+      </nav>
+
+      <!-- Right Action Cluster (Safe from Windows native buttons) -->
+      <div class="header-action-cluster">
+        
+        <!-- Controls visible when file is loaded -->
+        <div class="workspace-header-actions" id="workspaceHeaderActions" style="display: none;">
+          <button id="btnToggleDiff" class="btn btn-secondary btn-sm" title="Zobraziť porovnanie zmien">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
             <span class="btn-text">Zmeny</span>
             <span id="diffCounter" class="diff-counter-pill">0</span>
           </button>
-          
-          <button id="btnOpenFileSecondary" class="btn btn-secondary btn-sm" title="Otvoriť iný dokument (Ctrl+O)">
+
+          <button id="btnOpenFileSecondary" class="btn btn-secondary btn-sm" title="Otvoriť iný súbor (Ctrl+O)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <span class="btn-text">Iný súbor</span>
           </button>
 
-          <button id="btnExportPrimary" class="btn btn-primary btn-shiny btn-sm" title="Uložiť a exportovať balík (Ctrl+S)">
+          <button id="btnExportCopy" class="btn btn-secondary btn-sm" title="Uložiť kópiu súboru na nové miesto">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+            <span class="btn-text">Uložiť ako...</span>
+          </button>
+
+          <button id="btnSaveDirect" class="btn btn-primary btn-shiny btn-sm" title="Uložiť zmeny do súboru (Ctrl+S)">
             <span class="shiny-sweep-effect"></span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            <span class="btn-text">Uložiť &amp; Exportovať</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <span class="btn-text" id="saveButtonText">Uložiť</span>
           </button>
         </div>
 
-        <button id="btnThemeToggle" class="btn btn-icon btn-ghost" title="Prepnúť motív (Tmavý / Svetlý)">
-          <svg id="themeSvg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Sample button when empty -->
+        <button id="btnLoadSample" class="btn btn-ghost btn-sm" title="Načítať ukážkový dokument">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>
+          <span class="btn-text">Vzorka</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="btnThemeToggle" class="btn btn-icon btn-ghost" title="Prepnúť tmavý / svetlý režim">
+          <svg id="themeSvg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"></circle>
             <line x1="12" y1="1" x2="12" y2="3"></line>
             <line x1="12" y1="21" x2="12" y2="23"></line>
           </svg>
         </button>
+
       </div>
 
     </header>
 
-    <!-- Main App Split View -->
-    <div class="studio-body">
+    <!-- Main Workspace Container -->
+    <main class="studio-main-viewport">
       
-      <!-- Responsive Left Sidebar -->
-      <aside class="studio-sidebar">
+      <!-- 1. EMPTY STATE / HERO DROPZONE -->
+      <section class="empty-dropzone-view" id="viewEmptyState">
+        <canvas class="ambient-drop-canvas" id="ambientDropCanvas"></canvas>
         
-        <!-- Active Document Card (Impeccable Bento Preview) -->
-        <div class="sidebar-doc-card spotlight-card" id="sidebarDocCard" style="display: none;">
-          <div class="doc-card-header">
-            <div id="sideTypeBadge" class="doc-format-box type-word">DOC</div>
-            <div class="doc-card-meta">
-              <div id="sideFileName" class="doc-card-filename" title="dokument.docx">dokument.docx</div>
-              <div class="doc-card-subline">
-                <span id="sideTypeLabel" class="doc-format-name">Microsoft Word</span>
-                <span class="dot-sep">•</span>
-                <span id="sideFileSize" class="doc-size-text">0 KB</span>
-              </div>
-            </div>
+        <div class="hero-dropzone-box spotlight-card" id="dropzoneBox">
+          <div class="dropzone-icon-box">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
           </div>
 
-          <!-- Structured Metrics Rows (Symmetric, No Empty Holes) -->
-          <div class="doc-card-stats">
-            <div class="stat-row">
-              <span class="stat-key">Čas úprav</span>
-              <span id="sideMetaTime" class="stat-val">0m</span>
-            </div>
-            <div class="stat-row" id="sideMetaRevRow">
-              <span class="stat-key">Revízia</span>
-              <span id="sideMetaRev" class="stat-val">Rev. 1</span>
-            </div>
-            <div class="stat-row" id="sideMetaMetric1Row">
-              <span id="sideMetaMetric1Label" class="stat-key">Počet slov</span>
-              <span id="sideMetaMetric1Val" class="stat-val">0</span>
-            </div>
-            <div class="stat-row" id="sideMetaMetric2Row">
-              <span id="sideMetaMetric2Label" class="stat-key">Rozsah</span>
-              <span id="sideMetaMetric2Val" class="stat-val">0 strán</span>
-            </div>
+          <h2 class="dropzone-title">Presuňte sem Office dokument</h2>
+          <p class="dropzone-desc">
+            Aplikácia okamžite rozbalí OpenXML balíček, sprístupní skryté systémové metadáta a umožní ich prepísať bez poškodenia archívu.
+          </p>
+
+          <div class="format-badges-row">
+            <span class="format-pill"><span class="pill-dot word"></span> DOCX (Word)</span>
+            <span class="format-pill"><span class="pill-dot pptx"></span> PPTX (PowerPoint)</span>
+            <span class="format-pill"><span class="pill-dot xlsx"></span> XLSX (Excel)</span>
+          </div>
+
+          <div class="dropzone-actions-wrap">
+            <button class="btn btn-primary dropzone-browse-btn" id="btnBrowseHero">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Vybrať súbor z počítača</span>
+            </button>
+            <button class="btn btn-secondary dropzone-browse-btn" id="btnOpenSampleHero">
+              <span>Otvoriť vzorovú prácu</span>
+            </button>
           </div>
         </div>
 
-        <!-- Navigation Menu -->
-        <nav class="sidebar-nav">
-          <div class="nav-heading">Kategórie inšpekcie</div>
-          
-          <button class="nav-tab-btn active" data-section="secIdentity">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span class="nav-tab-text">Identita &amp; Autor</span>
-            <span class="nav-tab-badge">core.xml</span>
-          </button>
+        <input type="file" id="systemFileInput" style="display: none;" accept=".docx,.pptx,.xlsx,.dotx,.potx,.xltx,.docm,.pptm,.xlsm">
+      </section>
 
-          <button class="nav-tab-btn" data-section="secTiming">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-            <span class="nav-tab-text">Časový denník &amp; Revízie</span>
-            <span class="nav-tab-badge">TotalTime</span>
-          </button>
-
-          <button class="nav-tab-btn" data-section="secMetrics">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <span id="navMetricsTitle" class="nav-tab-text">Surová metrika</span>
-            <span class="nav-tab-badge">app.xml</span>
-          </button>
-
-          <button class="nav-tab-btn" data-section="secSimulator">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-            <span class="nav-tab-text">Živý simulátor</span>
-            <span class="nav-tab-badge">Náhľad</span>
-          </button>
-
-          <button class="nav-tab-btn" data-section="secCustom">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-            <span class="nav-tab-text">Vlastné atribúty</span>
-            <span class="nav-tab-badge">custom.xml</span>
-          </button>
-
-          <button class="nav-tab-btn" data-section="secXml">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-            <span class="nav-tab-text">Archív &amp; XML editor</span>
-            <span class="nav-tab-badge">7-Zip</span>
-          </button>
-        </nav>
-
-        <!-- Quick Sanitization Actions -->
-        <div class="sidebar-quick-actions" id="sidebarActions" style="display: none;">
-          <div class="nav-heading">Rýchle nástroje</div>
-          <button id="btnActionAnonymize" class="quick-action-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            <span>Anonymizovať stopy</span>
-          </button>
-          <button id="btnActionSyncDates" class="quick-action-btn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-            <span>Zosúladiť dátumy</span>
-          </button>
-          <button id="btnActionClearTemplate" class="quick-action-btn doc-action-word-only">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
-            <span>Očistiť šablónu</span>
-          </button>
-        </div>
-
-      </aside>
-
-      <!-- Main Studio Workspace (Fluid & Reactive) -->
-      <main class="studio-workspace">
+      <!-- 2. ACTIVE DOCUMENT WORKSPACE -->
+      <section class="active-workspace-view" id="viewWorkspace" style="display: none;">
         
-        <!-- View 1: Empty State / Hero Dropzone -->
-        <div id="viewEmptyState" class="hero-dropzone-view">
-          <canvas id="ambientDropCanvas" class="ambient-drop-canvas"></canvas>
-          <input type="file" id="systemFileInput" accept=".docx,.pptx,.xlsx,.dotx,.potx,.xltx,.docm,.pptm,.xlsm" style="display: none;">
+        <!-- Quick Context Strip (Top Summary Banner) -->
+        <div class="document-summary-banner" id="docSummaryBanner">
+          <div class="summary-meta-item">
+            <span class="summary-label">AUTOR</span>
+            <span class="summary-val" id="sumAuthor">-</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-meta-item">
+            <span class="summary-label">ČAS ÚPRAV</span>
+            <span class="summary-val accent-time" id="sumTime">0 min</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-meta-item" id="sumRevWrap">
+            <span class="summary-label">REVÍZIA</span>
+            <span class="summary-val" id="sumRevision">Rev. 1</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-meta-item">
+            <span class="summary-label" id="sumScopeLabel">ROZSAH OBSAHU</span>
+            <span class="summary-val" id="sumScope">0 slov / 0 strán</span>
+          </div>
+          <div class="summary-divider"></div>
           
-          <div id="dropzoneBox" class="hero-dropzone-box spotlight-card">
-            <div class="dropzone-glow-halo"></div>
-            <div class="dropzone-icon-box">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-            </div>
-            <h1 class="dropzone-title">Presuňte Office dokument do tohto okna</h1>
-            <p class="dropzone-desc">Aplikácia okamžite načíta balíček, izoluje polia a sprístupní podrobné metadáta a skryté systémové počítadlá.</p>
-            
-            <div class="format-badges-row">
-              <span class="format-pill"><span class="pill-dot word"></span>DOCX (Word)</span>
-              <span class="format-pill"><span class="pill-dot pptx"></span>PPTX (PowerPoint)</span>
-              <span class="format-pill"><span class="pill-dot xlsx"></span>XLSX (Excel)</span>
-            </div>
-
-            <div class="dropzone-actions">
-              <button type="button" id="btnBrowseHero" class="btn btn-secondary btn-sm dropzone-browse-btn">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <span>Vybrať súbor z počítača</span>
-              </button>
-            </div>
+          <!-- Quick Preset Pills -->
+          <div class="quick-preset-cluster">
+            <button id="btnActionAnonymize" class="preset-pill" title="Vyčistiť meno autora, posledného editora a spoločnosť">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span>Anonymizovať stopy</span>
+            </button>
+            <button id="btnActionSyncDates" class="preset-pill" title="Nastaviť dátum úpravy zhodný s dátumom vytvorenia">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>Zosúladiť dátumy</span>
+            </button>
+            <button id="btnActionClearTemplate" class="preset-pill doc-action-word-only" title="Odstrániť lokálnu používateľskú cestu zo šablóny Normal.dotm">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>Očistiť Normal.dotm</span>
+            </button>
           </div>
         </div>
 
-        <!-- View 2: Form Sections Workspace -->
-        <div id="viewFormSections" class="workspace-scroll-area" style="display: none;">
-
-          <!-- SECTION 1: Identity & Authorship -->
-          <section id="secIdentity" class="form-section active">
-            <header class="section-top-header">
+        <!-- Scrollable Workspace Container -->
+        <div class="workspace-scroll-canvas">
+          
+          <!-- SECTION 1: IDENTITA & AUTOR (core.xml) -->
+          <div class="form-section active" id="secIdentity">
+            <div class="section-hero-header">
               <div class="section-title-wrap">
-                <h2 class="section-main-title">Identita a autorstvo</h2>
-                <p class="section-sub-title">Základné identifikačné vlastnosti uložené v balíčku <code>docProps/core.xml</code>.</p>
+                <h1 class="section-main-title">Identita &amp; Autorstvo dokumentu</h1>
+                <p class="section-sub-title">Základné identifikačné metadáta z <code>docProps/core.xml</code>.</p>
               </div>
-            </header>
+            </div>
 
             <div class="bento-fluid-grid">
-              <!-- Author Card -->
+              
+              <!-- Autorstvo (Creator & LastModifiedBy) -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fCreator">Pôvodný autor (Creator)</label>
-                  <span class="field-badge">dc:creator</span>
+                  <span class="field-label">PÔVODNÝ AUTOR / VYTVORIL</span>
+                  <span class="field-badge">&lt;dc:creator&gt;</span>
                 </div>
-                <input type="text" id="fCreator" class="craft-input" placeholder="Meno pôvodného autora">
+                <input type="text" id="fCreator" class="craft-input" placeholder="Meno pôvodného autora (napr. Ján Novák)">
               </div>
 
-              <!-- Last Modified By Card -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fLastModifiedBy">Naposledy upravil (LastModifiedBy)</label>
-                  <span class="field-badge">cp:lastModifiedBy</span>
+                  <span class="field-label">POSLEDNÝ EDITOR / UPRAVIL</span>
+                  <span class="field-badge">&lt;cp:lastModifiedBy&gt;</span>
                 </div>
                 <input type="text" id="fLastModifiedBy" class="craft-input" placeholder="Meno posledného editora">
               </div>
 
-              <!-- Title Card (Spans across) -->
-              <div class="bento-card spotlight-card col-span-2">
-                <div class="card-field-header">
-                  <label class="field-label" for="fTitle">Názov dokumentu (Title)</label>
-                  <span class="field-badge">dc:title</span>
-                </div>
-                <input type="text" id="fTitle" class="craft-input" placeholder="Názov záverečnej práce alebo projektu">
-              </div>
-
-              <!-- Subject Card -->
+              <!-- Názov & Predmet -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fSubject">Predmet (Subject)</label>
-                  <span class="field-badge">dc:subject</span>
+                  <span class="field-label">NÁZOV DOKUMENTU (TITLE)</span>
+                  <span class="field-badge">&lt;dc:title&gt;</span>
                 </div>
-                <input type="text" id="fSubject" class="craft-input" placeholder="Téma, zameranie alebo kód">
+                <input type="text" id="fTitle" class="craft-input" placeholder="Názov záverečnej práce, správy alebo projektu">
               </div>
 
-              <!-- Keywords Card -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fKeywords">Kľúčové slová (Keywords)</label>
-                  <span class="field-badge">cp:keywords</span>
+                  <span class="field-label">PREDMET / TÉMA (SUBJECT)</span>
+                  <span class="field-badge">&lt;dc:subject&gt;</span>
+                </div>
+                <input type="text" id="fSubject" class="craft-input" placeholder="Téma, zameranie alebo kód predmetu">
+              </div>
+
+              <!-- Klasifikácia & Kľúčové slová -->
+              <div class="bento-card spotlight-card">
+                <div class="card-field-header">
+                  <span class="field-label">KĽÚČOVÉ SLOVÁ (KEYWORDS)</span>
+                  <span class="field-badge">&lt;cp:keywords&gt;</span>
                 </div>
                 <input type="text" id="fKeywords" class="craft-input" placeholder="Kľúčové slová oddelené čiarkou">
               </div>
 
-              <!-- Category Card -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fCategory">Kategória (Category)</label>
-                  <span class="field-badge">cp:category</span>
+                  <span class="field-label">KATEGÓRIA SÚBORU</span>
+                  <span class="field-badge">&lt;cp:category&gt;</span>
                 </div>
-                <input type="text" id="fCategory" class="craft-input" placeholder="Klasifikácia súboru">
+                <input type="text" id="fCategory" class="craft-input" placeholder="Napr. Záverečné práce, Obchodné zmluvy">
               </div>
 
-              <!-- Content Status Card -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fContentStatus">Stav obsahu (ContentStatus)</label>
-                  <span class="field-badge">cp:contentStatus</span>
+                  <span class="field-label">STAV OBSAHU (CONTENT STATUS)</span>
+                  <span class="field-badge">&lt;cp:contentStatus&gt;</span>
                 </div>
-                <input type="text" id="fContentStatus" class="craft-input" placeholder="Napr. Finálna verzia">
+                <input type="text" id="fContentStatus" class="craft-input" placeholder="Napr. Finálna verzia, Návrh, Schválené">
               </div>
 
-              <!-- Description Card (Spans across) -->
+              <!-- Popis / Anotácia -->
               <div class="bento-card spotlight-card col-span-2">
                 <div class="card-field-header">
-                  <label class="field-label" for="fDescription">Popis a doplňujúce poznámky (Description)</label>
-                  <span class="field-badge">dc:description</span>
+                  <span class="field-label">POPIS / ANOTÁCIA / KOMENTÁR (DESCRIPTION)</span>
+                  <span class="field-badge">&lt;dc:description&gt;</span>
                 </div>
-                <textarea id="fDescription" class="craft-input craft-textarea" placeholder="Doplňujúce poznámky"></textarea>
+                <textarea id="fDescription" class="craft-input craft-textarea" placeholder="Doplňujúce poznámky alebo abstrakt práce..."></textarea>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- SECTION 2: ČASOVÝ DENNÍK & REVÍZIE -->
+          <div class="form-section" id="secTiming">
+            <div class="section-hero-header">
+              <div class="section-title-wrap">
+                <h1 class="section-main-title">Časový denník &amp; Revízie</h1>
+                <p class="section-sub-title">Počítadlo celkového času práce (<code>docProps/app.xml</code> &lt;TotalTime&gt;) a história revízií.</p>
               </div>
             </div>
-          </section>
-
-          <!-- SECTION 2: Timing & Revisions (Bento Grid Hero Layout) -->
-          <section id="secTiming" class="form-section">
-            <header class="section-top-header">
-              <div class="section-title-wrap">
-                <h2 class="section-main-title">Časový denník a revízie</h2>
-                <p class="section-sub-title">Hardkódované počítadlá dĺžky práce a histórie uloženia (<code>app.xml</code> &amp; <code>core.xml</code>).</p>
-              </div>
-            </header>
 
             <div class="bento-fluid-grid">
               
-              <!-- Bento Hero Card: TotalTime Master Control -->
+              <!-- Hero TotalTime Card -->
               <div class="bento-card spotlight-card col-span-2 timing-hero-card">
+                <div class="card-field-header">
+                  <span class="field-label">CELKOVÝ ZAZNAMENANÝ ČAS ÚPRAV (TOTALTIME)</span>
+                  <span class="field-badge">&lt;TotalTime&gt; v minútach</span>
+                </div>
+
                 <div class="timing-hero-flex">
                   <div class="timing-val-block">
-                    <span class="field-label">Celkový zaznamenaný čas úprav</span>
-                    <div id="timingLargeDisplay" class="timing-big-number">0 min</div>
-                    <div id="timingHumanConverted" class="timing-human-sub">Zodpovedá: 0 hodín 0 minút</div>
+                    <div class="timing-big-number" id="timingLargeDisplay">0 min</div>
+                    <div class="timing-human-sub" id="timingHumanConverted">Zodpovedá: 0 hodín 0 minút</div>
                   </div>
-                  
+
                   <div class="timing-slider-block">
-                    <input type="range" id="fTotalTimeRange" min="0" max="2400" step="15" value="0" class="craft-slider">
+                    <input type="range" id="fTotalTimeRange" min="0" max="2400" step="5" class="craft-slider" value="0">
+                    
                     <div class="quick-pills-wrap">
-                      <button type="button" class="pill-btn" onclick="setTotalMinutes(15)">15 min</button>
-                      <button type="button" class="pill-btn" onclick="setTotalMinutes(60)">1 hodina</button>
-                      <button type="button" class="pill-btn" onclick="setTotalMinutes(180)">3 hodiny</button>
-                      <button type="button" class="pill-btn" onclick="setTotalMinutes(480)">8 hodín</button>
-                      <button type="button" class="pill-btn" onclick="setTotalMinutes(1200)">20 hodín</button>
-                      <button type="button" class="pill-btn pill-btn-danger" onclick="setTotalMinutes(0)">Vynulovať</button>
+                      <button class="pill-btn" onclick="setTotalMinutes(15)">15 min</button>
+                      <button class="pill-btn" onclick="setTotalMinutes(60)">1 hodina</button>
+                      <button class="pill-btn" onclick="setTotalMinutes(180)">3 hodiny</button>
+                      <button class="pill-btn" onclick="setTotalMinutes(480)">8 hodín</button>
+                      <button class="pill-btn" onclick="setTotalMinutes(1200)">20 hodín</button>
+                      <button class="pill-btn pill-btn-danger" onclick="setTotalMinutes(0)">Vynulovať</button>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Exact Minutes Direct Input Card -->
+              <!-- Presná hodnota minút & Číslo revízie -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fTotalTimeExact">Presná hodnota v minútach</label>
+                  <span class="field-label">PRESNÁ HODNOTA V MINÚTACH</span>
                   <span class="field-badge">&lt;TotalTime&gt;</span>
                 </div>
-                <input type="number" id="fTotalTimeExact" min="0" class="craft-input mono-font">
+                <input type="number" id="fTotalTimeExact" min="0" class="craft-input mono-font" value="0">
               </div>
 
-              <!-- Revision Number Card -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fRevision">Počet uložení / Číslo revízie</label>
-                  <span class="field-badge">cp:revision</span>
+                  <span class="field-label">POČET ULOŽENÍ / ČÍSLO REVÍZIE</span>
+                  <span class="field-badge">&lt;cp:revision&gt;</span>
                 </div>
-                <input type="number" id="fRevision" min="1" class="craft-input mono-font">
+                <div class="stepper-input-group">
+                  <button class="step-btn" onclick="stepRevision(-5)">-5</button>
+                  <button class="step-btn" onclick="stepRevision(-1)">-1</button>
+                  <input type="number" id="fRevision" min="1" class="craft-input mono-font" value="1">
+                  <button class="step-btn" onclick="stepRevision(1)">+1</button>
+                  <button class="step-btn" onclick="stepRevision(5)">+5</button>
+                </div>
               </div>
 
-              <!-- Created Timestamp Card -->
+              <!-- Dátumy Created & Modified -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fCreated">Časová pečiatka vytvorenia</label>
-                  <span class="field-badge">dcterms:created</span>
+                  <span class="field-label">ČASOVÁ PEČIATKA VYTVORENIA</span>
+                  <span class="field-badge">&lt;dcterms:created&gt;</span>
                 </div>
                 <input type="datetime-local" id="fCreated" class="craft-input mono-font">
               </div>
 
-              <!-- Modified Timestamp Card -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fModified">Časová pečiatka poslednej úpravy</label>
-                  <span class="field-badge">dcterms:modified</span>
+                  <span class="field-label">ČASOVÁ PEČIATKA POSLEDNEJ ÚPRAVY</span>
+                  <span class="field-badge">&lt;dcterms:modified&gt;</span>
                 </div>
                 <input type="datetime-local" id="fModified" class="craft-input mono-font">
               </div>
 
             </div>
-          </section>
+          </div>
 
-          <!-- SECTION 3: Raw Metrics & Counters -->
-          <section id="secMetrics" class="form-section">
-            <header class="section-top-header">
+          <!-- SECTION 3: SUROVÁ METRIKA (app.xml) -->
+          <div class="form-section" id="secMetrics">
+            <div class="section-hero-header">
               <div class="section-title-wrap">
-                <h2 class="section-main-title" id="metricsSectionHeading">Surová metrika &amp; Systémové počítadlá</h2>
-                <p class="section-sub-title" id="metricsSectionSubtext">Tieto polia sú prispôsobené konkrétnemu typu súboru v balíčku <code>docProps/app.xml</code>.</p>
+                <h1 class="section-main-title" id="secMetricsHeaderTitle">Surová metrika &amp; Počítadlá</h1>
+                <p class="section-sub-title">Hardkódované čísla a organizačné atribúty v <code>docProps/app.xml</code>.</p>
               </div>
-            </header>
+            </div>
 
             <div class="bento-fluid-grid">
               
-              <!-- EXCEL SPECIFIC INFO CARD -->
-              <div class="bento-card spotlight-card col-span-2 doc-field-xlsx" style="display: none; background: rgba(16, 185, 129, 0.04); border-color: rgba(16, 185, 129, 0.25);">
+              <!-- WORD METRICS -->
+              <div class="bento-card spotlight-card doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" style="color: #34d399;">Špecifikácia tabuľkového zošita Excel (XLSX)</label>
-                  <span class="field-badge" style="color: #34d399; border-color: rgba(16, 185, 129, 0.3);">SpreadsheetML</span>
-                </div>
-                <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 4px;">
-                  V tabuľkových zošitoch Excel (XLSX) sa štatistika textových slov a strán neeviduje v balíčku <code>docProps/app.xml</code>, nakoľko štruktúru tvoria riadky a bunky. Organizačné atribúty, autorstvo, zaznamenaný čas úprav a verzia aplikácie sú plne nastaviteľné nižšie.
-                </p>
-              </div>
-
-              <!-- WORD SPECIFIC FIELDS -->
-              <div class="bento-card spotlight-card col-span-2 doc-field-word">
-                <div class="card-field-header">
-                  <label class="field-label" for="fWords">Surový počet slov (Words)</label>
+                  <span class="field-label">SUROVÝ POČET SLOV (WORDS)</span>
                   <span class="field-badge">&lt;Words&gt;</span>
                 </div>
                 <div class="stepper-input-group">
+                  <button class="step-btn" onclick="stepWords(-500)">-500</button>
+                  <button class="step-btn" onclick="stepWords(-100)">-100</button>
                   <input type="number" id="fWords" min="0" class="craft-input mono-font" style="font-size: 15px; font-weight: 600;">
-                  <button type="button" class="step-btn" onclick="stepWords(-500)">-500</button>
-                  <button type="button" class="step-btn" onclick="stepWords(-100)">-100</button>
-                  <button type="button" class="step-btn" onclick="stepWords(+100)">+100</button>
-                  <button type="button" class="step-btn" onclick="stepWords(+500)">+500</button>
+                  <button class="step-btn" onclick="stepWords(100)">+100</button>
+                  <button class="step-btn" onclick="stepWords(500)">+500</button>
                 </div>
               </div>
 
               <div class="bento-card spotlight-card doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" for="fPages">Surový počet strán (Pages)</label>
+                  <span class="field-label">SUROVÝ POČET STRÁN (PAGES)</span>
                   <span class="field-badge">&lt;Pages&gt;</span>
                 </div>
                 <div class="stepper-input-group">
+                  <button class="step-btn" onclick="stepPages(-5)">-5</button>
+                  <button class="step-btn" onclick="stepPages(-1)">-1</button>
                   <input type="number" id="fPages" min="0" class="craft-input mono-font">
-                  <button type="button" class="step-btn" onclick="stepPages(-5)">-5</button>
-                  <button type="button" class="step-btn" onclick="stepPages(-1)">-1</button>
-                  <button type="button" class="step-btn" onclick="stepPages(+1)">+1</button>
-                  <button type="button" class="step-btn" onclick="stepPages(+5)">+5</button>
+                  <button class="step-btn" onclick="stepPages(1)">+1</button>
+                  <button class="step-btn" onclick="stepPages(5)">+5</button>
                 </div>
               </div>
 
               <div class="bento-card spotlight-card doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" for="fCharacters">Počet znakov</label>
-                  <span class="field-badge">Characters</span>
+                  <span class="field-label">POČET ZNAKOV (CHARACTERS)</span>
+                  <span class="field-badge">&lt;Characters&gt;</span>
                 </div>
                 <input type="number" id="fCharacters" min="0" class="craft-input mono-font">
               </div>
 
               <div class="bento-card spotlight-card doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" for="fCharactersWithSpaces">Znaky s medzerami</label>
-                  <span class="field-badge">CharactersWithSpaces</span>
+                  <span class="field-label">ZNAKY S MEDZERAMI</span>
+                  <span class="field-badge">&lt;CharactersWithSpaces&gt;</span>
                 </div>
                 <input type="number" id="fCharactersWithSpaces" min="0" class="craft-input mono-font">
               </div>
 
               <div class="bento-card spotlight-card doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" for="fParagraphs">Počet odsekov</label>
-                  <span class="field-badge">Paragraphs</span>
+                  <span class="field-label">POČET ODSEKOV</span>
+                  <span class="field-badge">&lt;Paragraphs&gt;</span>
                 </div>
                 <input type="number" id="fParagraphs" min="0" class="craft-input mono-font">
               </div>
 
               <div class="bento-card spotlight-card doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" for="fLines">Počet riadkov</label>
-                  <span class="field-badge">Lines</span>
+                  <span class="field-label">POČET RIADKOV</span>
+                  <span class="field-badge">&lt;Lines&gt;</span>
                 </div>
                 <input type="number" id="fLines" min="0" class="craft-input mono-font">
               </div>
 
               <div class="bento-card spotlight-card col-span-2 doc-field-word">
                 <div class="card-field-header">
-                  <label class="field-label" for="fTemplate">Cesta k šablóne (Template)</label>
-                  <span class="field-badge">Template</span>
+                  <span class="field-label">CESTA K ŠABLÓNE (TEMPLATE)</span>
+                  <span class="field-badge">&lt;Template&gt;</span>
                 </div>
                 <input type="text" id="fTemplate" class="craft-input mono-font" placeholder="Napr. Normal.dotm">
               </div>
 
-              <!-- POWERPOINT SPECIFIC FIELDS -->
-              <div class="bento-card spotlight-card col-span-2 doc-field-pptx" style="display: none;">
+              <!-- POWERPOINT METRICS -->
+              <div class="bento-card spotlight-card doc-field-pptx" style="display: none;">
                 <div class="card-field-header">
-                  <label class="field-label" for="fSlides">Počet snímkov (Slides)</label>
+                  <span class="field-label">POČET SNÍMKOV (SLIDES)</span>
                   <span class="field-badge">&lt;Slides&gt;</span>
                 </div>
                 <div class="stepper-input-group">
+                  <button class="step-btn" onclick="stepSlides(-5)">-5</button>
+                  <button class="step-btn" onclick="stepSlides(-1)">-1</button>
                   <input type="number" id="fSlides" min="0" class="craft-input mono-font" style="font-size: 15px; font-weight: 600;">
-                  <button type="button" class="step-btn" onclick="stepSlides(-5)">-5</button>
-                  <button type="button" class="step-btn" onclick="stepSlides(-1)">-1</button>
-                  <button type="button" class="step-btn" onclick="stepSlides(+1)">+1</button>
-                  <button type="button" class="step-btn" onclick="stepSlides(+5)">+5</button>
+                  <button class="step-btn" onclick="stepSlides(1)">+1</button>
+                  <button class="step-btn" onclick="stepSlides(5)">+5</button>
                 </div>
               </div>
 
               <div class="bento-card spotlight-card doc-field-pptx" style="display: none;">
                 <div class="card-field-header">
-                  <label class="field-label" for="fNotes">Počet poznámok (Notes)</label>
+                  <span class="field-label">POČET POZNÁMOK (NOTES)</span>
                   <span class="field-badge">&lt;Notes&gt;</span>
                 </div>
                 <input type="number" id="fNotes" min="0" class="craft-input mono-font">
@@ -491,217 +476,252 @@
 
               <div class="bento-card spotlight-card doc-field-pptx" style="display: none;">
                 <div class="card-field-header">
-                  <label class="field-label" for="fHiddenSlides">Skryté snímky (HiddenSlides)</label>
+                  <span class="field-label">SKRYTÉ SNÍMKY (HIDDEN SLIDES)</span>
                   <span class="field-badge">&lt;HiddenSlides&gt;</span>
                 </div>
                 <input type="number" id="fHiddenSlides" min="0" class="craft-input mono-font">
               </div>
 
-              <!-- SYSTEM & APPLICATION TRACES (All Formats) -->
+              <!-- ORGANIZÁCIA & APLIKÁCIA (Pre všetky formáty) -->
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fCompany">Organizácia / Spoločnosť</label>
-                  <span class="field-badge">Company</span>
+                  <span class="field-label">ORGANIZÁCIA / SPOLOČNOSŤ</span>
+                  <span class="field-badge">&lt;Company&gt;</span>
                 </div>
-                <input type="text" id="fCompany" class="craft-input" placeholder="Názov firmy">
+                <input type="text" id="fCompany" class="craft-input" placeholder="Názov firmy alebo univerzity">
               </div>
 
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fManager">Manažér / Školiteľ</label>
-                  <span class="field-badge">Manager</span>
+                  <span class="field-label">MANAŽÉR / ŠKOLITEĽ / VEDÚCI</span>
+                  <span class="field-badge">&lt;Manager&gt;</span>
                 </div>
-                <input type="text" id="fManager" class="craft-input" placeholder="Meno vedúceho">
+                <input type="text" id="fManager" class="craft-input" placeholder="Meno vedúceho alebo manažéra">
               </div>
 
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fApplication">Názov aplikácie</label>
-                  <span class="field-badge">Application</span>
+                  <span class="field-label">NÁZOV APLIKÁCIE (APPLICATION)</span>
+                  <span class="field-badge">&lt;Application&gt;</span>
                 </div>
                 <input type="text" id="fApplication" class="craft-input">
               </div>
 
               <div class="bento-card spotlight-card">
                 <div class="card-field-header">
-                  <label class="field-label" for="fAppVersion">Verzia aplikácie</label>
-                  <span class="field-badge">AppVersion</span>
+                  <span class="field-label">VERZIA APLIKÁCIE (APPVERSION)</span>
+                  <span class="field-badge">&lt;AppVersion&gt;</span>
                 </div>
                 <input type="text" id="fAppVersion" class="craft-input mono-font">
               </div>
 
             </div>
-          </section>
+          </div>
 
-          <!-- SECTION 4: Live Visual Simulator -->
-          <section id="secSimulator" class="form-section">
-            <header class="section-top-header">
+          <!-- SECTION 4: ŽIVÝ SIMULÁTOR (Prieskumník Windows & MS Office) -->
+          <div class="form-section" id="secSimulator">
+            <div class="section-hero-header">
               <div class="section-title-wrap">
-                <h2 class="section-main-title">Živý simulátor náhľadu</h2>
-                <p class="section-sub-title">Reálny náhľad toho, ako tento súbor vidí Windows Prieskumník a kancelársky balík Office.</p>
+                <h1 class="section-main-title">Živý simulátor zobrazenia</h1>
+                <p class="section-sub-title">Reálny náhľad toho, čo uvidí Windows Prieskumník a Microsoft Office pri otvorení súboru.</p>
               </div>
-            </header>
+            </div>
 
             <div class="simulator-responsive-wrap">
-              <!-- Windows Explorer Details Dialog -->
-              <div class="sim-preview-window spotlight-card">
+              
+              <!-- Windows Properties Window Simulation -->
+              <div class="sim-preview-window">
                 <div class="sim-titlebar">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
-                  <span>Windows: Vlastnosti súboru &gt; Podrobnosti</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                  <span>Windows Prieskumník &gt; Vlastnosti &gt; Podrobnosti</span>
                 </div>
+                
                 <div class="sim-content-body">
                   <table class="sim-data-table">
-                    <tr><td colspan="2" class="sim-section-label">Popis</td></tr>
-                    <tr><td class="sim-k">Názov</td><td id="simTitle" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Predmet</td><td id="simSubject" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Značky</td><td id="simKeywords" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Kategórie</td><td id="simCategory" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Komentáre</td><td id="simComments" class="sim-v">-</td></tr>
-                    
-                    <tr><td colspan="2" class="sim-section-label">Pôvod</td></tr>
-                    <tr><td class="sim-k">Autori</td><td id="simAuthors" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Posledné uloženie</td><td id="simLastAuthor" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Číslo revízie</td><td id="simRevision" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Názov programu</td><td id="simProgram" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Spoločnosť</td><td id="simCompany" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Manažér</td><td id="simManager" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Celkový čas úprav</td><td id="simTotalTime" class="sim-v">-</td></tr>
+                    <tbody>
+                      <tr><td colspan="2" class="sim-section-label">Popis</td></tr>
+                      <tr><td class="sim-k">Názov</td><td class="sim-v" id="simTitle">-</td></tr>
+                      <tr><td class="sim-k">Predmet</td><td class="sim-v" id="simSubject">-</td></tr>
+                      <tr><td class="sim-k">Značky</td><td class="sim-v" id="simKeywords">-</td></tr>
+                      <tr><td class="sim-k">Kategórie</td><td class="sim-v" id="simCategory">-</td></tr>
+                      <tr><td class="sim-k">Komentáre</td><td class="sim-v" id="simComments">-</td></tr>
 
-                    <tr><td colspan="2" class="sim-section-label">Štatistika</td></tr>
-                    <tr id="simRowPages"><td class="sim-k">Počet strán</td><td id="simPages" class="sim-v">-</td></tr>
-                    <tr id="simRowWords"><td class="sim-k">Počet slov</td><td id="simWords" class="sim-v">-</td></tr>
-                    <tr id="simRowSlides" style="display: none;"><td class="sim-k">Počet snímkov</td><td id="simSlides" class="sim-v">-</td></tr>
-                    <tr id="simRowCharacters"><td class="sim-k">Znaky</td><td id="simCharacters" class="sim-v">-</td></tr>
-                    <tr id="simRowLines"><td class="sim-k">Riadky</td><td id="simLines" class="sim-v">-</td></tr>
-                    <tr id="simRowParagraphs"><td class="sim-k">Odseky</td><td id="simParagraphs" class="sim-v">-</td></tr>
+                      <tr><td colspan="2" class="sim-section-label">Pôvod</td></tr>
+                      <tr><td class="sim-k">Autori</td><td class="sim-v" id="simAuthors">-</td></tr>
+                      <tr><td class="sim-k">Naposledy uložil</td><td class="sim-v" id="simLastSavedBy">-</td></tr>
+                      <tr><td class="sim-k">Číslo revízie</td><td class="sim-v" id="simRevision">-</td></tr>
+                      <tr><td class="sim-k">Názov programu</td><td class="sim-v" id="simProgram">-</td></tr>
+                      <tr><td class="sim-k">Spoločnosť</td><td class="sim-v" id="simCompany">-</td></tr>
+                      <tr><td class="sim-k">Manažér</td><td class="sim-v" id="simManager">-</td></tr>
 
-                    <tr><td colspan="2" class="sim-section-label">Dátumy</td></tr>
-                    <tr><td class="sim-k">Vytvorené</td><td id="simCreated" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Uložené</td><td id="simModified" class="sim-v">-</td></tr>
+                      <tr><td colspan="2" class="sim-section-label">Štatistika obsahu</td></tr>
+                      <tr id="simRowTotalTime"><td class="sim-k">Celkový čas úprav</td><td class="sim-v" id="simTotalTime">0 minút</td></tr>
+                      <tr id="simRowPages"><td class="sim-k">Počet strán</td><td class="sim-v" id="simPages">0</td></tr>
+                      <tr id="simRowWords"><td class="sim-k">Počet slov</td><td class="sim-v" id="simWords">0</td></tr>
+                      <tr id="simRowCharacters"><td class="sim-k">Počet znakov</td><td class="sim-v" id="simCharacters">0</td></tr>
+                      <tr id="simRowLines"><td class="sim-k">Riadky</td><td class="sim-v" id="simLines">0</td></tr>
+                      <tr id="simRowParagraphs"><td class="sim-k">Odseky</td><td class="sim-v" id="simParagraphs">0</td></tr>
+                      <tr id="simRowSlides" style="display: none;"><td class="sim-k">Snímky</td><td class="sim-v" id="simSlides">0</td></tr>
+                    </tbody>
                   </table>
                 </div>
               </div>
 
-              <!-- Office Info Backstage Dialog -->
-              <div class="sim-preview-window spotlight-card">
+              <!-- MS Office Backstage Info Window Simulation -->
+              <div class="sim-preview-window">
                 <div class="sim-titlebar">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
-                  <span id="simOfficeAppTitle">Microsoft Office &gt; Informácie</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>
+                  <span id="simOfficeAppTitle">Microsoft Word &gt; Súbor &gt; Informácie</span>
                 </div>
-                <div class="sim-content-body office-theme">
+
+                <div class="sim-content-body">
                   <div class="office-doc-hero">
-                    <div id="simOfficeDocTitle" class="office-hero-title">Dokument</div>
-                    <div class="office-hero-path">C:\Users\...\Dokument.docx</div>
+                    <div class="office-hero-title" id="simOfficeDocName">Dokument.docx</div>
+                    <div class="office-hero-path" id="simOfficeDocPath">C:\Users\...</div>
                   </div>
 
                   <table class="sim-data-table">
-                    <tr><td colspan="2" class="sim-section-label">Vlastnosti</td></tr>
-                    <tr><td class="sim-k">Veľkosť</td><td id="statusSize" class="sim-v">-</td></tr>
-                    <tr id="simRowPagesOffice"><td class="sim-k" id="simOfficePagesLabel">Strany</td><td id="simOfficePages" class="sim-v">-</td></tr>
-                    <tr id="simRowWordsOffice"><td class="sim-k">Slová</td><td id="simOfficeWords" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Celkový čas úprav</td><td id="simOfficeTotalTime" class="sim-v">-</td></tr>
+                    <tbody>
+                      <tr><td colspan="2" class="sim-section-label">Vlastnosti dokumentu</td></tr>
+                      <tr><td class="sim-k">Veľkosť</td><td class="sim-v" id="simOfficeSize">0 KB</td></tr>
+                      <tr id="simOfficePagesRow"><td class="sim-k" id="simOfficePagesLabel">Strany</td><td class="sim-v" id="simOfficePages">0</td></tr>
+                      <tr id="simOfficeWordsRow"><td class="sim-k">Slová</td><td class="sim-v" id="simOfficeWords">0</td></tr>
+                      <tr><td class="sim-k">Celkový čas úprav</td><td class="sim-v" id="simOfficeTime">0 min</td></tr>
+                      <tr><td class="sim-k">Názov</td><td class="sim-v" id="simOfficeTitle">-</td></tr>
+                      <tr><td class="sim-k">Značky</td><td class="sim-v" id="simOfficeTags">-</td></tr>
+                      <tr><td class="sim-k">Kategórie</td><td class="sim-v" id="simOfficeCategory">-</td></tr>
 
-                    <tr><td colspan="2" class="sim-section-label">Súvisiace dátumy</td></tr>
-                    <tr><td class="sim-k">Posledná zmena</td><td id="simOfficeModified" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Vytvorené</td><td id="simOfficeCreated" class="sim-v">-</td></tr>
+                      <tr><td colspan="2" class="sim-section-label">Súvisiace dátumy</td></tr>
+                      <tr><td class="sim-k">Posledná úprava</td><td class="sim-v" id="simOfficeModified">-</td></tr>
+                      <tr><td class="sim-k">Vytvorené</td><td class="sim-v" id="simOfficeCreated">-</td></tr>
 
-                    <tr><td colspan="2" class="sim-section-label">Súvisiace osoby</td></tr>
-                    <tr><td class="sim-k">Autor</td><td id="simOfficeAuthor" class="sim-v">-</td></tr>
-                    <tr><td class="sim-k">Naposledy upravil</td><td id="simOfficeLastAuthor" class="sim-v">-</td></tr>
+                      <tr><td colspan="2" class="sim-section-label">Súvisiace osoby</td></tr>
+                      <tr><td class="sim-k">Autor</td><td class="sim-v" id="simOfficeAuthor">-</td></tr>
+                      <tr><td class="sim-k">Posledná úprava</td><td class="sim-v" id="simOfficeLastSavedBy">-</td></tr>
+                    </tbody>
                   </table>
                 </div>
               </div>
-            </div>
-          </section>
 
-          <!-- SECTION 5: Custom XML Properties -->
-          <section id="secCustom" class="form-section">
-            <header class="section-top-header">
+            </div>
+          </div>
+
+          <!-- SECTION 5: VLASTNÉ ATRIBÚTY (custom.xml) -->
+          <div class="form-section" id="secCustom">
+            <div class="section-hero-header">
               <div class="section-title-wrap">
-                <h2 class="section-main-title">Vlastné atribúty dokumentu</h2>
-                <p class="section-sub-title">Používateľom definované kľúč-hodnota atribúty v balíčku <code>docProps/custom.xml</code>.</p>
+                <h1 class="section-main-title">Vlastné atribúty (custom.xml)</h1>
+                <p class="section-sub-title">Používateľské vlastnosti súboru definované v <code>docProps/custom.xml</code>.</p>
               </div>
-            </header>
+            </div>
 
             <div class="custom-props-container spotlight-card">
               <table class="custom-props-table">
                 <thead>
                   <tr>
-                    <th>Názov vlastnosti</th>
-                    <th>Hodnota atribútu</th>
-                    <th style="width: 80px; text-align: right;">Akcia</th>
+                    <th style="width: 45%;">NÁZOV ATRIBÚTU (NAME)</th>
+                    <th style="width: 45%;">HODNOTA (VALUE)</th>
+                    <th style="width: 10%; text-align: center;">AKCIA</th>
                   </tr>
                 </thead>
-                <tbody id="customPropsTbody"></tbody>
+                <tbody id="customPropsTableBody">
+                  <tr>
+                    <td colspan="3" class="empty-diff-text">Žiadne vlastné atribúty nie sú definované.</td>
+                  </tr>
+                </tbody>
               </table>
 
               <div class="add-prop-row">
                 <input type="text" id="newPropName" class="craft-input" placeholder="Názov novej vlastnosti (napr. ID_Projektu)">
                 <input type="text" id="newPropValue" class="craft-input" placeholder="Hodnota atribútu">
-                <button type="button" id="btnAddNewProp" class="btn btn-secondary btn-sm">Pridať vlastnosť</button>
+                <button id="btnAddNewProp" class="btn btn-secondary">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                  <span>Pridať</span>
+                </button>
               </div>
             </div>
-          </section>
+          </div>
 
-          <!-- SECTION 6: Universal Archive & Raw XML Editor -->
-          <section id="secXml" class="form-section">
-            <header class="section-top-header">
+          <!-- SECTION 6: XML ARCHÍV & KÓDOVÝ EDITOR -->
+          <div class="form-section" id="secXml">
+            <div class="section-hero-header">
               <div class="section-title-wrap">
-                <h2 class="section-main-title">Univerzálny archív &amp; XML editor</h2>
-                <p class="section-sub-title">Priama editácia ľubovoľnej XML časti archívu (ekvivalent otvorenia v 7-Zip).</p>
+                <h1 class="section-main-title">Archív &amp; Priamy editor XML</h1>
+                <p class="section-sub-title">Prehliadanie a priama úprava ľubovoľného XML súboru v OpenXML balíčku (7-Zip simulácia).</p>
               </div>
-            </header>
+            </div>
 
             <div class="raw-xml-container spotlight-card">
               <div class="xml-editor-toolbar">
-                <select id="xmlArchiveFileSelect" class="xml-file-picker"></select>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">Súbor v archíve:</span>
+                  <select id="xmlArchiveFileSelect" class="xml-file-picker">
+                    <option value="docProps/core.xml">docProps/core.xml</option>
+                    <option value="docProps/app.xml">docProps/app.xml</option>
+                    <option value="docProps/custom.xml">docProps/custom.xml</option>
+                  </select>
+                </div>
+
                 <div class="xml-toolbar-actions">
-                  <span id="xmlStatusNotice" class="xml-status-badge">Syntax: Valid</span>
-                  <button type="button" id="btnPrettifyXmlCode" class="btn btn-secondary btn-sm">Formátovať kód</button>
-                  <button type="button" id="btnApplyXmlCode" class="btn btn-primary btn-sm">Použiť zmeny</button>
+                  <button id="btnPrettifyXmlCode" class="btn btn-secondary btn-sm" title="Automaticky zarovnať XML kód">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                    <span>Formátovať XML</span>
+                  </button>
+                  <button id="btnSaveXmlCode" class="btn btn-primary btn-sm" title="Zapísať zmeny z editora do pamäťového archívu">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Aplikovať zmeny</span>
+                  </button>
                 </div>
               </div>
+
               <textarea id="xmlCodeEditor" class="xml-code-editor" spellcheck="false"></textarea>
             </div>
-          </section>
+          </div>
 
         </div>
+      </section>
 
-      </main>
+    </main>
 
-    </div>
-
-    <!-- Collapsible Diff Inspector Flyout -->
-    <div id="diffContainer" class="diff-flyout-drawer" style="display: none;">
+    <!-- Side Slide-Out Diff Drawer -->
+    <div class="diff-flyout-drawer" id="diffContainer" style="display: none;">
       <div class="diff-drawer-header">
         <div class="diff-drawer-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-          <span>Prehľad zmien oproti pôvodnému súboru</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <span>Prehľad vykonaných zmien</span>
         </div>
-        <button type="button" id="btnCloseDiff" class="btn btn-icon btn-ghost" title="Zavrieť">✕</button>
+        <button id="btnCloseDiff" class="btn btn-icon btn-ghost" title="Zavrieť panel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
-      <div class="diff-drawer-body" id="diffContent">
-        <p class="empty-diff-text">Zatiaľ neboli vykonané žiadne zmeny.</p>
+
+      <div class="diff-drawer-body" id="diffContentList">
+        <div class="empty-diff-text">Zatiaľ neboli vykonané žiadne zmeny.</div>
       </div>
     </div>
 
-    <!-- Responsive Bottom Statusbar -->
+    <!-- Responsive Studio Statusbar -->
     <footer class="studio-statusbar">
       <div class="statusbar-left">
-        <span id="statusBullet" class="status-indicator-dot idle"></span>
+        <span class="status-dot synced" id="statusBullet"></span>
         <span id="statusText">Pripravené</span>
         <span class="statusbar-sep">•</span>
         <span id="packageFormat">OpenXML Archív</span>
       </div>
+
       <div class="statusbar-right">
-        <span>Klávesové skratky: <kbd>Ctrl+O</kbd> Otvoriť | <kbd>Ctrl+S</kbd> Uložiť</span>
+        <span>Veľkosť: <strong id="statusSize">0 KB</strong></span>
+        <span class="statusbar-sep">•</span>
+        <span>Ctrl+S Uložiť</span>
+        <span class="statusbar-sep">•</span>
+        <span>Ctrl+O Otvoriť</span>
       </div>
     </footer>
 
-    <!-- Floating Toast Notification -->
-    <div id="toastNotice" class="craft-toast-notice">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      <span id="toastNoticeText">Akcia prebehla úspešne</span>
+    <!-- Floating Craft Toast Notice -->
+    <div class="craft-toast-notice" id="toastNotice">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      <span id="toastNoticeText">Notifikácia</span>
     </div>
 
   </div>

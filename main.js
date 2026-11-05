@@ -111,6 +111,19 @@ ipcMain.handle('dialog:saveFile', async (event, { defaultName, bufferData }) => 
   return { success: true, savedPath: result.filePath };
 });
 
+ipcMain.handle('file:saveDirect', async (event, { filePath, bufferData }) => {
+  if (!filePath) {
+    return { success: false, error: 'Neplatná cesta k súboru' };
+  }
+  try {
+    const buffer = Buffer.from(bufferData);
+    fs.writeFileSync(filePath, buffer);
+    return { success: true, savedPath: filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

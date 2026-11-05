@@ -19,4 +19,6 @@ build/
 # Temporary outputs
 temp_test/
 *.tmp
+test_*.docx
+*.log
 

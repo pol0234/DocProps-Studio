@@ -1,34 +1,32 @@
-/**
- * DocProps Studio - Desktop Application Engine
- * With GSAP dynamic animations, context-aware document formatting, and live simulators.
- */
+// -----------------------------------------------------------------------------
+// DocProps Studio - Craft Web Design & OpenXML Engine
+// 100% Free / Open-Source, Zero-Cost Guaranteed
+// -----------------------------------------------------------------------------
 
-// Global State
+// Active State
 let currentZip = null;
 let currentFileInfo = {
   name: '',
   size: 0,
   path: '',
-  type: 'word' // 'word', 'pptx', 'xlsx', 'generic'
+  type: 'word' // word | pptx | xlsx | generic
 };
 
-let activeSectionId = 'secIdentity';
-let activeArchiveFile = 'docProps/core.xml';
 let originalSnapshot = {};
-
 let xmlDocs = {
   core: null,
   app: null,
   custom: null
 };
 
-// Namespaces
+// Namespaces standard
 const NS = {
   cp: 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties',
   dc: 'http://purl.org/dc/elements/1.1/',
   dcterms: 'http://purl.org/dc/terms/',
+  xsi: 'http://www.w3.org/2001/XMLSchema-instance',
   ep: 'http://schemas.openxmlformats.org/officeDocument/2006/extended-properties',
-  cust: 'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties',
+  custom: 'http://schemas.openxmlformats.org/officeDocument/2006/custom-properties',
   vt: 'http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes'
 };
 
@@ -40,12 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initEvents();
   initKeyboardShortcuts();
   initElectronBridge();
-  initSpotlightCards();
   initAmbientHeroCanvas();
 });
 
 // -----------------------------------------------------------------------------
-// Electron IPC Integration
+// Electron Bridge Integration
 // -----------------------------------------------------------------------------
 function initElectronBridge() {
   if (window.electronAPI) {
@@ -59,7 +56,77 @@ function initElectronBridge() {
 }
 
 // -----------------------------------------------------------------------------
-// Craft Web Design: Ambient Hero Canvas & Dynamic Spotlight
+// Theme Management
+// -----------------------------------------------------------------------------
+function initTheme() {
+  const savedTheme = localStorage.getItem('docprops-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+  if (window.electronAPI && window.electronAPI.setTheme) {
+    window.electronAPI.setTheme(savedTheme);
+  }
+
+  document.getElementById('btnThemeToggle').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('docprops-theme', next);
+    updateThemeIcon(next);
+    if (window.electronAPI && window.electronAPI.setTheme) {
+      window.electronAPI.setTheme(next);
+    }
+  });
+}
+
+function updateThemeIcon(theme) {
+  const svg = document.getElementById('themeSvg');
+  if (!svg) return;
+  if (theme === 'dark') {
+    svg.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+  } else {
+    svg.innerHTML = `
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="19.78" y1="19.78" x2="18.36" y2="18.36"></line>
+    `;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Horizon Navigation Tabs
+// -----------------------------------------------------------------------------
+function initNavigation() {
+  const navTabs = document.querySelectorAll('.horizon-nav-tabs .nav-tab-btn');
+  const sections = document.querySelectorAll('.form-section');
+
+  navTabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-section');
+      
+      navTabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      sections.forEach(sec => {
+        sec.classList.remove('active');
+        if (sec.id === targetId) {
+          sec.classList.add('active');
+          if (window.gsap) {
+            gsap.fromTo(sec, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.22, ease: 'power2.out' });
+          }
+        }
+      });
+    });
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Ambient Canvas (Empty State)
 // -----------------------------------------------------------------------------
 let ambientCanvasAnimationId = null;
 let ambientCanvasRunning = false;
@@ -79,11 +146,11 @@ function initAmbientHeroCanvas() {
     height = canvas.height = canvas.offsetHeight || window.innerHeight;
   });
 
-  const numParticles = 44;
+  const numParticles = 40;
   const colors = [
-    'rgba(59, 130, 246, 0.40)', // Word Cobalt
-    'rgba(16, 185, 129, 0.35)', // Excel Emerald
-    'rgba(249, 115, 22, 0.35)'  // PowerPoint Amber
+    'rgba(59, 130, 246, 0.45)', // Word Cobalt
+    'rgba(16, 185, 129, 0.40)', // Excel Emerald
+    'rgba(249, 115, 22, 0.40)'  // PowerPoint Amber
   ];
 
   const particles = [];
@@ -116,6 +183,8 @@ function initAmbientHeroCanvas() {
     if (!ambientCanvasRunning) return;
     ctx.clearRect(0, 0, width, height);
 
+    const isLightMode = document.documentElement.getAttribute('data-theme') === 'light';
+
     for (let i = 0; i < numParticles; i++) {
       const p = particles[i];
       p.x += p.vx;
@@ -126,15 +195,15 @@ function initAmbientHeroCanvas() {
       if (p.y < 0) p.y = height;
       if (p.y > height) p.y = 0;
 
-      // Gentle interactive repulsion
+      // Mouse repulsion
       if (mouse.x > 0) {
         const dx = p.x - mouse.x;
         const dy = p.y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 130 && dist > 0) {
-          const force = (130 - dist) / 130;
-          p.x += (dx / dist) * force * 1.1;
-          p.y += (dy / dist) * force * 1.1;
+        if (dist < 120 && dist > 0) {
+          const force = (120 - dist) / 120;
+          p.x += (dx / dist) * force * 1.2;
+          p.y += (dy / dist) * force * 1.2;
         }
       }
 
@@ -144,19 +213,18 @@ function initAmbientHeroCanvas() {
       ctx.fill();
 
       // Constellation lines
-      const isLightMode = document.documentElement.getAttribute('data-theme') === 'light';
       for (let j = i + 1; j < numParticles; j++) {
         const p2 = particles[j];
         const dx = p.x - p2.x;
         const dy = p.y - p2.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 95) {
+        if (dist < 90) {
           ctx.beginPath();
           ctx.moveTo(p.x, p.y);
           ctx.lineTo(p2.x, p2.y);
           ctx.strokeStyle = isLightMode
-            ? `rgba(15, 23, 42, ${0.07 * (1 - dist / 95)})`
-            : `rgba(255, 255, 255, ${0.06 * (1 - dist / 95)})`;
+            ? `rgba(15, 23, 42, ${0.06 * (1 - dist / 90)})`
+            : `rgba(255, 255, 255, ${0.05 * (1 - dist / 90)})`;
           ctx.lineWidth = 0.7;
           ctx.stroke();
         }
@@ -178,167 +246,29 @@ function stopAmbientHeroCanvas() {
   }
 }
 
-function startAmbientHeroCanvas() {
-  if (!ambientCanvasRunning) {
-    ambientCanvasRunning = true;
-    initAmbientHeroCanvas();
-  }
-}
-
-function initSpotlightCards() {
-  document.addEventListener('mousemove', (e) => {
-    const cards = document.querySelectorAll('.spotlight-card, .bento-card, .sidebar-doc-card, .sim-preview-window, .hero-dropzone-box');
-    cards.forEach(card => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      if (x >= -40 && x <= rect.width + 40 && y >= -40 && y <= rect.height + 40) {
-        card.style.setProperty('--mouse-x', `${x}px`);
-        card.style.setProperty('--mouse-y', `${y}px`);
-      }
-    });
-  });
-}
-
 // -----------------------------------------------------------------------------
-// Theme Management
-// -----------------------------------------------------------------------------
-function initTheme() {
-  const savedTheme = localStorage.getItem('docprops-theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', savedTheme);
-  updateThemeIcon(savedTheme);
-  if (window.electronAPI && window.electronAPI.setTheme) {
-    window.electronAPI.setTheme(savedTheme);
-  }
-
-  document.getElementById('btnThemeToggle').addEventListener('click', () => {
-    const cur = document.documentElement.getAttribute('data-theme');
-    const next = cur === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('docprops-theme', next);
-    updateThemeIcon(next);
-    if (window.electronAPI && window.electronAPI.setTheme) {
-      window.electronAPI.setTheme(next);
-    }
-  });
-}
-
-function updateThemeIcon(theme) {
-  const svg = document.getElementById('themeSvg');
-  if (theme === 'dark') {
-    svg.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
-  } else {
-    svg.innerHTML = `
-      <circle cx="12" cy="12" r="5"></circle>
-      <line x1="12" y1="1" x2="12" y2="3"></line>
-      <line x1="12" y1="21" x2="12" y2="23"></line>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-      <line x1="1" y1="12" x2="3" y2="12"></line>
-      <line x1="21" y1="12" x2="23" y2="12"></line>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    `;
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Navigation Between Sections with GSAP
-// -----------------------------------------------------------------------------
-function initNavigation() {
-  const navItems = document.querySelectorAll('.nav-tab-btn, .nav-item');
-  navItems.forEach(item => {
-    item.addEventListener('click', () => {
-      navItems.forEach(n => n.classList.remove('active'));
-      item.classList.add('active');
-
-      const secId = item.getAttribute('data-section');
-      activeSectionId = secId;
-
-      document.querySelectorAll('.form-section').forEach(sec => sec.classList.remove('active'));
-      const targetSec = document.getElementById(secId);
-      if (targetSec) {
-        targetSec.classList.add('active');
-        // GSAP smooth section fade & slide
-        if (window.gsap) {
-          gsap.fromTo(targetSec, 
-            { opacity: 0, y: 10 }, 
-            { opacity: 1, y: 0, duration: 0.24, ease: 'power2.out' }
-          );
-          gsap.fromTo(targetSec.querySelectorAll('.bento-card, .sim-preview-window, .custom-props-container, .raw-xml-container'),
-            { opacity: 0, y: 8 },
-            { opacity: 1, y: 0, duration: 0.28, stagger: 0.03, ease: 'power2.out' }
-          );
-        }
-      }
-
-      // Update Breadcrumb & Header Capsule
-      const labelEl = item.querySelector('.nav-tab-text') || item.querySelector('span');
-      const secText = labelEl ? labelEl.textContent : item.textContent.trim();
-      const bcSec = document.getElementById('bcCurrentSection');
-      const headerSep = document.getElementById('headerContextSep');
-      if (bcSec) {
-        bcSec.textContent = secText;
-        bcSec.style.display = 'inline';
-      }
-      if (headerSep) headerSep.style.display = 'inline';
-
-      if (secId === 'secXml') {
-        syncFormToXmlDocs();
-        loadArchiveFileIntoEditor(activeArchiveFile);
-      } else if (secId === 'secSimulator') {
-        updateLiveSimulators();
-      }
-    });
-  });
-}
-
-// -----------------------------------------------------------------------------
-// File Ingestion & Drag / Drop
+// Drag & Drop & File Input
 // -----------------------------------------------------------------------------
 function initDragAndDrop() {
   const dropzoneBox = document.getElementById('dropzoneBox');
   const fileInput = document.getElementById('systemFileInput');
-
-  dropzoneBox.addEventListener('click', async () => {
-    if (window.electronAPI) {
-      const fileData = await window.electronAPI.openFileDialog();
-      if (fileData) {
-        loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
-      }
-    } else {
-      fileInput.click();
-    }
-  });
-
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files && e.target.files[0]) {
-      loadFile(e.target.files[0]);
-    }
-  });
-
-  ['dragenter', 'dragover'].forEach(ev => {
-    window.addEventListener(ev, (e) => {
-      e.preventDefault();
-      dropzoneBox.classList.add('dragover');
-    });
-  });
-
-  ['dragleave', 'drop'].forEach(ev => {
-    window.addEventListener(ev, (e) => {
-      e.preventDefault();
-      dropzoneBox.classList.remove('dragover');
-    });
-  });
-
-  window.addEventListener('drop', (e) => {
-    e.preventDefault();
-    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-      loadFile(e.dataTransfer.files[0]);
-    }
-  });
-
   const btnBrowseHero = document.getElementById('btnBrowseHero');
+  const btnLoadSample = document.getElementById('btnLoadSample');
+  const btnOpenSampleHero = document.getElementById('btnOpenSampleHero');
+
+  if (dropzoneBox) {
+    dropzoneBox.addEventListener('click', async () => {
+      if (window.electronAPI) {
+        const fileData = await window.electronAPI.openFileDialog();
+        if (fileData) {
+          loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+        }
+      } else {
+        fileInput.click();
+      }
+    });
+  }
+
   if (btnBrowseHero) {
     btnBrowseHero.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -352,11 +282,61 @@ function initDragAndDrop() {
       }
     });
   }
+
+  if (fileInput) {
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        loadFile(e.target.files[0]);
+      }
+    });
+  }
+
+  if (btnLoadSample) {
+    btnLoadSample.addEventListener('click', loadSampleDiplomovka);
+  }
+  if (btnOpenSampleHero) {
+    btnOpenSampleHero.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadSampleDiplomovka();
+    });
+  }
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    window.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (dropzoneBox) dropzoneBox.classList.add('dragover');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(ev => {
+    window.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (dropzoneBox) dropzoneBox.classList.remove('dragover');
+    });
+  });
+
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      loadFile(e.dataTransfer.files[0]);
+    }
+  });
+
+  // Spotlight mouse effect on cards
+  document.addEventListener('mousemove', (e) => {
+    const cards = document.querySelectorAll('.spotlight-card');
+    cards.forEach(card => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      card.style.setProperty('--mouse-x', `${x}px`);
+      card.style.setProperty('--mouse-y', `${y}px`);
+    });
+  });
 }
 
 async function loadFile(file) {
   try {
-    // If running in Electron and file.path is present, read directly through native Node filesystem
     if (window.electronAPI && file.path) {
       const fileData = await window.electronAPI.readFromPath(file.path);
       if (fileData && fileData.buffer) {
@@ -367,23 +347,24 @@ async function loadFile(file) {
     const arrayBuffer = await file.arrayBuffer();
     await loadFromBinaryBuffer(arrayBuffer, file.name, file.size, file.path || file.name);
   } catch (err) {
-    console.error('Chyba pri čítaní súboru:', err);
+    console.error('Chyba načítania:', err);
     alert('Nepodarilo sa načítať súbor:\n' + (err.message || err));
   }
 }
 
+// -----------------------------------------------------------------------------
+// Core Engine: Load Archive & Parse XML
+// -----------------------------------------------------------------------------
 async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
   try {
     const ext = (fileName || '').split('.').pop().toLowerCase();
 
-    // Friendly alert for legacy binary formats
     if (['doc', 'xls', 'ppt'].includes(ext)) {
-      alert(`Súbor "${fileName}" je v staršom binárnom formáte Microsoft Office (.${ext}).\n\nDocProps Studio podporuje moderné otvorené štandardy OpenXML (.docx, .xlsx, .pptx).\nProsím, otvorte súbor v Office a zvoľte "Uložiť ako" s príponou .${ext}x.`);
+      alert(`Súbor "${fileName}" je v starom binárnom formáte Office (.${ext}).\n\nDocProps Studio vyžaduje moderné OpenXML balíky (.docx, .xlsx, .pptx). Otvorte súbor v Microsofte Office a zvoľte "Uložiť ako" vo formáte .${ext}x.`);
       return;
     }
 
     let docType = 'generic';
-
     if (['docx', 'docm', 'dotx', 'dotm'].includes(ext)) {
       docType = 'word';
     } else if (['pptx', 'pptm', 'potx', 'potm'].includes(ext)) {
@@ -395,11 +376,11 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     currentFileInfo = {
       name: fileName,
       size: fileSize,
-      path: filePath,
+      path: filePath || '',
       type: docType
     };
 
-    // Normalize buffer for JSZip
+    // Buffer normalization to Uint8Array
     let zipInput = buffer;
     if (Array.isArray(buffer)) {
       zipInput = new Uint8Array(buffer);
@@ -415,69 +396,58 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     await parseArchiveMetadata();
     populateArchiveDropdown();
 
-    // Show Workspace, Hide Empty Dropzone & stop ambient canvas
+    // Hide Empty Dropzone, Show Active Workspace
     stopAmbientHeroCanvas();
     document.getElementById('viewEmptyState').style.display = 'none';
-    document.getElementById('viewFormSections').style.display = 'block';
-    document.getElementById('sidebarDocCard').style.display = 'flex';
-    document.getElementById('sidebarActions').style.display = 'flex';
-    document.getElementById('toolbarControls').style.display = 'flex';
+    document.getElementById('viewWorkspace').style.display = 'flex';
+    document.getElementById('docFileCapsule').style.display = 'flex';
+    document.getElementById('horizonNavTabs').style.display = 'flex';
+    document.getElementById('workspaceHeaderActions').style.display = 'flex';
 
-    // Update UI headers & adapt to docType
+    // Adapt layout to Document Type
     applyDocumentTypeContext(docType);
     updateDocumentMetadataHeader();
+
+    // Snapshot for Diff calculation
     saveSnapshot();
     updateDiffSummary();
     updateLiveSimulators();
 
-    // GSAP Intro animation
+    // GSAP Intro
     if (window.gsap) {
-      gsap.from('#sidebarDocCard', { opacity: 0, x: -16, duration: 0.35, ease: 'power2.out' });
-      gsap.from('.stat-row', { opacity: 0, x: -8, stagger: 0.04, duration: 0.25, ease: 'power1.out' });
-      gsap.from('.form-section.active .bento-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.35, ease: 'power2.out' });
+      gsap.from('#docSummaryBanner', { opacity: 0, y: -8, duration: 0.25, ease: 'power2.out' });
+      gsap.from('.form-section.active .bento-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.3, ease: 'power2.out' });
     }
 
-    document.getElementById('headerContextSep').style.display = 'inline';
-    document.getElementById('bcCurrentSection').style.display = 'inline';
-    document.getElementById('headerStatusDot').className = 'status-dot synced';
-
     setStatus(true, 'Dokument pripravený');
-    showToastNotice(`Dokument '${fileName}' bol úspešne načítaný.`);
+    showToastNotice(`Dokument '${fileName}' bol úspešne otvorený.`);
   } catch (err) {
-    console.error('Chyba načítania OpenXML:', err);
+    console.error('Chyba OpenXML:', err);
     alert('Neplatný formát OpenXML archívu alebo poškodený súbor:\n' + (err.message || err));
   }
 }
 
 // -----------------------------------------------------------------------------
-// Document Type Context Customization (Word vs PPTX vs Excel)
+// Document Context Adaptation
 // -----------------------------------------------------------------------------
 function applyDocumentTypeContext(type) {
-  const root = document.documentElement;
   const wordFields = document.querySelectorAll('.doc-field-word');
   const pptxFields = document.querySelectorAll('.doc-field-pptx');
-  const xlsxFields = document.querySelectorAll('.doc-field-xlsx');
   const wordActions = document.querySelectorAll('.doc-action-word-only');
-  const pill = document.getElementById('bcDocTypePill');
   const navMetricsTitle = document.getElementById('navMetricsTitle');
-
-  pill.style.display = 'inline-block';
+  const secMetricsHeaderTitle = document.getElementById('secMetricsHeaderTitle');
+  const sumScopeLabel = document.getElementById('sumScopeLabel');
+  const sumRevWrap = document.getElementById('sumRevWrap');
 
   if (type === 'word') {
-    root.style.setProperty('--doc-brand-color', '#2563eb');
-    pill.textContent = 'WORD (DOCX)';
-    pill.style.borderColor = '#2563eb';
-    pill.style.color = '#3b82f6';
-    navMetricsTitle.textContent = 'Surová metrika (Slová/Strany)';
+    if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika obsahu';
+    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Metrika obsahu & Počítadlá (Word)';
+    if (sumScopeLabel) sumScopeLabel.textContent = 'ROZSAH OBSAHU';
+    if (sumRevWrap) sumRevWrap.style.display = 'flex';
 
     wordFields.forEach(el => el.style.display = 'flex');
     pptxFields.forEach(el => el.style.display = 'none');
-    xlsxFields.forEach(el => el.style.display = 'none');
-    wordActions.forEach(el => el.style.display = 'flex');
-
-    // Sidebar metric labels
-    document.getElementById('sideMetaMetric1Label').textContent = 'Počet slov';
-    document.getElementById('sideMetaMetric2Label').textContent = 'Rozsah';
+    wordActions.forEach(el => el.style.display = 'inline-flex');
 
     // Simulator adjustments
     document.getElementById('simRowPages').style.display = 'table-row';
@@ -487,22 +457,17 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simRowParagraphs').style.display = 'table-row';
     document.getElementById('simRowSlides').style.display = 'none';
     document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Word > Informácie';
-    document.getElementById('simOfficePagesLabel').textContent = 'Strany';
+    document.getElementById('simOfficePagesRow').style.display = 'table-row';
+    document.getElementById('simOfficeWordsRow').style.display = 'table-row';
   } else if (type === 'pptx') {
-    root.style.setProperty('--doc-brand-color', '#ea580c');
-    pill.textContent = 'POWERPOINT (PPTX)';
-    pill.style.borderColor = '#ea580c';
-    pill.style.color = '#f97316';
-    navMetricsTitle.textContent = 'Surová metrika (Snímky/Poznámky)';
+    if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika snímkov';
+    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Metrika prezentácie & Snímky (PowerPoint)';
+    if (sumScopeLabel) sumScopeLabel.textContent = 'POČET SNÍMKOV';
+    if (sumRevWrap) sumRevWrap.style.display = 'flex';
 
     wordFields.forEach(el => el.style.display = 'none');
     pptxFields.forEach(el => el.style.display = 'flex');
-    xlsxFields.forEach(el => el.style.display = 'none');
     wordActions.forEach(el => el.style.display = 'none');
-
-    // Sidebar metric labels
-    document.getElementById('sideMetaMetric1Label').textContent = 'Počet snímkov';
-    document.getElementById('sideMetaMetric2Label').textContent = 'Poznámky';
 
     // Simulator adjustments
     document.getElementById('simRowPages').style.display = 'none';
@@ -512,24 +477,17 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simRowParagraphs').style.display = 'none';
     document.getElementById('simRowSlides').style.display = 'table-row';
     document.getElementById('simOfficeAppTitle').textContent = 'Microsoft PowerPoint > Informácie';
-    document.getElementById('simOfficePagesLabel').textContent = 'Snímky';
+    document.getElementById('simOfficePagesRow').style.display = 'none';
+    document.getElementById('simOfficeWordsRow').style.display = 'none';
   } else if (type === 'xlsx') {
-    root.style.setProperty('--doc-brand-color', '#16a34a');
-    pill.textContent = 'EXCEL (XLSX)';
-    pill.style.borderColor = '#16a34a';
-    pill.style.color = '#22c55e';
-    navMetricsTitle.textContent = 'Metrika a vlastnosti zošita';
+    if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika zošita';
+    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Vlastnosti zošita (Excel)';
+    if (sumScopeLabel) sumScopeLabel.textContent = 'TYP ZOŠITA';
+    if (sumRevWrap) sumRevWrap.style.display = 'none';
 
     wordFields.forEach(el => el.style.display = 'none');
     pptxFields.forEach(el => el.style.display = 'none');
-    xlsxFields.forEach(el => el.style.display = 'flex');
     wordActions.forEach(el => el.style.display = 'none');
-
-    // Sidebar metric labels
-    document.getElementById('sideMetaMetric1Label').textContent = 'Typ zošita';
-    document.getElementById('sideMetaMetric1Val').textContent = 'Tabuľka (XLSX)';
-    document.getElementById('sideMetaMetric2Label').textContent = 'Stav zošita';
-    document.getElementById('sideMetaMetric2Val').textContent = 'Odomknutý';
 
     // Simulator adjustments
     document.getElementById('simRowPages').style.display = 'none';
@@ -539,43 +497,44 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simRowParagraphs').style.display = 'none';
     document.getElementById('simRowSlides').style.display = 'none';
     document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Excel > Informácie';
+    document.getElementById('simOfficePagesRow').style.display = 'none';
+    document.getElementById('simOfficeWordsRow').style.display = 'none';
   }
 }
 
 function updateDocumentMetadataHeader() {
-  const name = currentFileInfo.name;
-  const size = currentFileInfo.size;
-  const ext = name.split('.').pop().toLowerCase();
+  const name = currentFileInfo.name || 'dokument.docx';
+  const size = currentFileInfo.size || 0;
+  const ext = name.split('.').pop().toUpperCase();
 
-  document.getElementById('sideFileName').textContent = name;
-  document.getElementById('sideFileName').title = currentFileInfo.path || name;
-  document.getElementById('sideFileSize').textContent = `${formatBytes(size)} • OOXML`;
-  document.getElementById('statusSize').textContent = formatBytes(size);
-  document.getElementById('bcDocName').textContent = name;
+  const topFileName = document.getElementById('topFileName');
+  const topFileSize = document.getElementById('topFileSize');
+  const topTypeBadge = document.getElementById('topTypeBadge');
+  const packageFormat = document.getElementById('packageFormat');
+  const statusSize = document.getElementById('statusSize');
 
-  const badge = document.getElementById('sideTypeBadge');
-  const typeLabel = document.getElementById('sideTypeLabel');
-  badge.className = 'doc-format-box';
+  topFileName.textContent = name;
+  topFileName.title = currentFileInfo.path || name;
+  topFileSize.textContent = formatBytes(size);
+  statusSize.textContent = formatBytes(size);
 
+  topTypeBadge.className = 'type-pill';
   if (currentFileInfo.type === 'word') {
-    badge.classList.add('type-word');
-    badge.textContent = 'DOC';
-    typeLabel.textContent = 'Microsoft Word';
-    document.getElementById('packageFormat').textContent = 'WordprocessingML (DOCX)';
+    topTypeBadge.classList.add('word');
+    topTypeBadge.textContent = 'DOCX';
+    packageFormat.textContent = 'WordprocessingML (DOCX)';
   } else if (currentFileInfo.type === 'pptx') {
-    badge.classList.add('type-pptx');
-    badge.textContent = 'PPT';
-    typeLabel.textContent = 'Microsoft PowerPoint';
-    document.getElementById('packageFormat').textContent = 'PresentationML (PPTX)';
+    topTypeBadge.classList.add('pptx');
+    topTypeBadge.textContent = 'PPTX';
+    packageFormat.textContent = 'PresentationML (PPTX)';
   } else if (currentFileInfo.type === 'xlsx') {
-    badge.classList.add('type-xlsx');
-    badge.textContent = 'XLS';
-    typeLabel.textContent = 'Microsoft Excel';
-    document.getElementById('packageFormat').textContent = 'SpreadsheetML (XLSX)';
+    topTypeBadge.classList.add('xlsx');
+    topTypeBadge.textContent = 'XLSX';
+    packageFormat.textContent = 'SpreadsheetML (XLSX)';
   } else {
-    badge.classList.add('type-generic');
-    badge.textContent = ext.toUpperCase().substring(0, 3);
-    typeLabel.textContent = 'OpenXML Archív';
+    topTypeBadge.classList.add('generic');
+    topTypeBadge.textContent = ext;
+    packageFormat.textContent = 'OpenXML Archív';
   }
 }
 
@@ -585,7 +544,7 @@ function updateDocumentMetadataHeader() {
 async function parseArchiveMetadata() {
   const parser = new DOMParser();
 
-  // Core Properties (docProps/core.xml)
+  // 1. Core Properties (docProps/core.xml)
   const coreFile = currentZip.file('docProps/core.xml');
   if (coreFile) {
     const text = await coreFile.async('text');
@@ -594,7 +553,7 @@ async function parseArchiveMetadata() {
     xmlDocs.core = parser.parseFromString(createBlankCoreXml(), 'application/xml');
   }
 
-  // App Properties (docProps/app.xml) - The key file with words, pages, total time
+  // 2. Extended Properties (docProps/app.xml)
   const appFile = currentZip.file('docProps/app.xml');
   if (appFile) {
     const text = await appFile.async('text');
@@ -603,7 +562,7 @@ async function parseArchiveMetadata() {
     xmlDocs.app = parser.parseFromString(createBlankAppXml(), 'application/xml');
   }
 
-  // Custom Properties (docProps/custom.xml)
+  // 3. Custom Properties (docProps/custom.xml)
   const customFile = currentZip.file('docProps/custom.xml');
   if (customFile) {
     const text = await customFile.async('text');
@@ -628,17 +587,17 @@ function populateForm() {
   
   const rev = getTagValue(xmlDocs.core, 'revision') || '1';
   setVal('fRevision', rev);
-  animateMetricText('sideMetaRev', `Rev. ${rev}`);
+  document.getElementById('sumRevision').textContent = `Rev. ${rev}`;
 
   // Dates
   setVal('fCreated', isoToDatetimeLocal(getTagValue(xmlDocs.core, 'created')));
   setVal('fModified', isoToDatetimeLocal(getTagValue(xmlDocs.core, 'modified')));
 
-  // App (Total Time)
+  // App Total Time
   const totalMin = parseInt(getTagValue(xmlDocs.app, 'TotalTime') || '0', 10);
   setTotalMinutes(totalMin, false);
 
-  // App (Raw Metrics from docProps/app.xml)
+  // App Metrics
   const pages = getTagValue(xmlDocs.app, 'Pages') || '0';
   const words = getTagValue(xmlDocs.app, 'Words') || '0';
   const slides = getTagValue(xmlDocs.app, 'Slides') || '0';
@@ -661,81 +620,245 @@ function populateForm() {
   setVal('fApplication', getTagValue(xmlDocs.app, 'Application'));
   setVal('fAppVersion', getTagValue(xmlDocs.app, 'AppVersion'));
 
-  // Update Sidebar Metrics with animation
-  if (currentFileInfo.type === 'pptx') {
-    animateMetricText('sideMetaMetric1Val', `${slides} snímkov`);
-    animateMetricText('sideMetaMetric2Val', `${notes} pozn.`);
-  } else if (currentFileInfo.type === 'word') {
-    animateMetricText('sideMetaMetric1Val', Number(words).toLocaleString());
-    animateMetricText('sideMetaMetric2Val', `${pages} strán`);
-  } else if (currentFileInfo.type === 'xlsx') {
-    animateMetricText('sideMetaMetric1Val', 'Tabuľka (XLSX)');
-    animateMetricText('sideMetaMetric2Val', 'Odomknutý');
-  }
+  // Summary Banner Update
+  updateSummaryBanner();
 
-  // Custom properties
+  // Custom Properties Table
   renderCustomPropertiesTable();
 }
 
+function updateSummaryBanner() {
+  const author = getVal('fCreator') || '(neuvedený)';
+  const totalTime = parseInt(getVal('fTotalTimeExact') || '0', 10);
+  const rev = getVal('fRevision') || '1';
+  const words = getVal('fWords') || '0';
+  const pages = getVal('fPages') || '0';
+  const slides = getVal('fSlides') || '0';
+
+  document.getElementById('sumAuthor').textContent = author;
+  document.getElementById('sumTime').textContent = formatMinutesToShort(totalTime);
+  document.getElementById('sumRevision').textContent = `Rev. ${rev}`;
+
+  if (currentFileInfo.type === 'word') {
+    document.getElementById('sumScope').textContent = `${Number(words).toLocaleString()} slov / ${pages} strán`;
+  } else if (currentFileInfo.type === 'pptx') {
+    document.getElementById('sumScope').textContent = `${slides} snímkov`;
+  } else if (currentFileInfo.type === 'xlsx') {
+    document.getElementById('sumScope').textContent = `Tabuľka (XLSX)`;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Two-Way Sync Engine (Form -> XML DOM with STRICT Namespaces)
+// -----------------------------------------------------------------------------
 function syncFormToXmlDocs() {
-  // Core
-  setTagValue(xmlDocs.core, 'creator', 'dc:creator', getVal('fCreator'));
-  setTagValue(xmlDocs.core, 'lastModifiedBy', 'cp:lastModifiedBy', getVal('fLastModifiedBy'));
-  setTagValue(xmlDocs.core, 'title', 'dc:title', getVal('fTitle'));
-  setTagValue(xmlDocs.core, 'subject', 'dc:subject', getVal('fSubject'));
-  setTagValue(xmlDocs.core, 'keywords', 'cp:keywords', getVal('fKeywords'));
-  setTagValue(xmlDocs.core, 'category', 'cp:category', getVal('fCategory'));
-  setTagValue(xmlDocs.core, 'contentStatus', 'cp:contentStatus', getVal('fContentStatus'));
-  setTagValue(xmlDocs.core, 'description', 'dc:description', getVal('fDescription'));
-  setTagValue(xmlDocs.core, 'revision', 'cp:revision', getVal('fRevision'));
+  if (!xmlDocs.core || !xmlDocs.app) return;
+
+  // 1. Core Properties
+  setStrictTag(xmlDocs.core, 'creator', 'dc:creator', NS.dc, getVal('fCreator'));
+  setStrictTag(xmlDocs.core, 'lastModifiedBy', 'cp:lastModifiedBy', NS.cp, getVal('fLastModifiedBy'));
+  setStrictTag(xmlDocs.core, 'title', 'dc:title', NS.dc, getVal('fTitle'));
+  setStrictTag(xmlDocs.core, 'subject', 'dc:subject', NS.dc, getVal('fSubject'));
+  setStrictTag(xmlDocs.core, 'keywords', 'cp:keywords', NS.cp, getVal('fKeywords'));
+  setStrictTag(xmlDocs.core, 'category', 'cp:category', NS.cp, getVal('fCategory'));
+  setStrictTag(xmlDocs.core, 'contentStatus', 'cp:contentStatus', NS.cp, getVal('fContentStatus'));
+  setStrictTag(xmlDocs.core, 'description', 'dc:description', NS.dc, getVal('fDescription'));
+  setStrictTag(xmlDocs.core, 'revision', 'cp:revision', NS.cp, getVal('fRevision'));
 
   const createdVal = getVal('fCreated');
-  if (createdVal) setTagValue(xmlDocs.core, 'created', 'dcterms:created', datetimeLocalToIso(createdVal));
-
-  const modifiedVal = getVal('fModified');
-  if (modifiedVal) setTagValue(xmlDocs.core, 'modified', 'dcterms:modified', datetimeLocalToIso(modifiedVal));
-
-  // App (docProps/app.xml)
-  setTagValue(xmlDocs.app, 'TotalTime', 'TotalTime', getVal('fTotalTimeExact'));
-  setTagValue(xmlDocs.app, 'Words', 'Words', getVal('fWords'));
-  setTagValue(xmlDocs.app, 'Pages', 'Pages', getVal('fPages'));
-  setTagValue(xmlDocs.app, 'Characters', 'Characters', getVal('fCharacters'));
-  setTagValue(xmlDocs.app, 'CharactersWithSpaces', 'CharactersWithSpaces', getVal('fCharactersWithSpaces'));
-  setTagValue(xmlDocs.app, 'Paragraphs', 'Paragraphs', getVal('fParagraphs'));
-  setTagValue(xmlDocs.app, 'Lines', 'Lines', getVal('fLines'));
-  setTagValue(xmlDocs.app, 'Slides', 'Slides', getVal('fSlides'));
-  setTagValue(xmlDocs.app, 'Notes', 'Notes', getVal('fNotes'));
-  setTagValue(xmlDocs.app, 'HiddenSlides', 'HiddenSlides', getVal('fHiddenSlides'));
-
-  setTagValue(xmlDocs.app, 'Company', 'Company', getVal('fCompany'));
-  setTagValue(xmlDocs.app, 'Manager', 'Manager', getVal('fManager'));
-  setTagValue(xmlDocs.app, 'Template', 'Template', getVal('fTemplate'));
-  setTagValue(xmlDocs.app, 'Application', 'Application', getVal('fApplication'));
-  setTagValue(xmlDocs.app, 'AppVersion', 'AppVersion', getVal('fAppVersion'));
-
-  // Update Sidebar Metrics in real time
-  const sideRevEl = document.getElementById('sideMetaRev');
-  if (sideRevEl) sideRevEl.textContent = `Rev. ${getVal('fRevision') || '1'}`;
-  
-  const m1 = document.getElementById('sideMetaMetric1Val');
-  const m2 = document.getElementById('sideMetaMetric2Val');
-  if (currentFileInfo.type === 'pptx') {
-    if (m1) m1.textContent = `${getVal('fSlides') || 0} snímkov`;
-    if (m2) m2.textContent = `${getVal('fNotes') || 0} pozn.`;
-  } else if (currentFileInfo.type === 'word') {
-    if (m1) m1.textContent = Number(getVal('fWords') || 0).toLocaleString();
-    if (m2) m2.textContent = `${getVal('fPages') || 0} strán`;
-  } else if (currentFileInfo.type === 'xlsx') {
-    if (m1) m1.textContent = 'Tabuľka (XLSX)';
-    if (m2) m2.textContent = 'Odomknutý';
+  if (createdVal) {
+    setStrictTag(xmlDocs.core, 'created', 'dcterms:created', NS.dcterms, datetimeLocalToIso(createdVal), 'dcterms:W3CDTF');
   }
 
+  const modifiedVal = getVal('fModified');
+  if (modifiedVal) {
+    setStrictTag(xmlDocs.core, 'modified', 'dcterms:modified', NS.dcterms, datetimeLocalToIso(modifiedVal), 'dcterms:W3CDTF');
+  }
+
+  // 2. Extended Properties (app.xml - Default namespace ep)
+  setStrictTag(xmlDocs.app, 'TotalTime', 'TotalTime', NS.ep, getVal('fTotalTimeExact'));
+  setStrictTag(xmlDocs.app, 'Words', 'Words', NS.ep, getVal('fWords'));
+  setStrictTag(xmlDocs.app, 'Pages', 'Pages', NS.ep, getVal('fPages'));
+  setStrictTag(xmlDocs.app, 'Characters', 'Characters', NS.ep, getVal('fCharacters'));
+  setStrictTag(xmlDocs.app, 'CharactersWithSpaces', 'CharactersWithSpaces', NS.ep, getVal('fCharactersWithSpaces'));
+  setStrictTag(xmlDocs.app, 'Paragraphs', 'Paragraphs', NS.ep, getVal('fParagraphs'));
+  setStrictTag(xmlDocs.app, 'Lines', 'Lines', NS.ep, getVal('fLines'));
+  setStrictTag(xmlDocs.app, 'Slides', 'Slides', NS.ep, getVal('fSlides'));
+  setStrictTag(xmlDocs.app, 'Notes', 'Notes', NS.ep, getVal('fNotes'));
+  setStrictTag(xmlDocs.app, 'HiddenSlides', 'HiddenSlides', NS.ep, getVal('fHiddenSlides'));
+
+  setStrictTag(xmlDocs.app, 'Company', 'Company', NS.ep, getVal('fCompany'));
+  setStrictTag(xmlDocs.app, 'Manager', 'Manager', NS.ep, getVal('fManager'));
+  setStrictTag(xmlDocs.app, 'Template', 'Template', NS.ep, getVal('fTemplate'));
+  setStrictTag(xmlDocs.app, 'Application', 'Application', NS.ep, getVal('fApplication'));
+  setStrictTag(xmlDocs.app, 'AppVersion', 'AppVersion', NS.ep, getVal('fAppVersion'));
+
+  // Update Summary Banner, Diff & Simulators
+  updateSummaryBanner();
   updateDiffSummary();
   updateLiveSimulators();
 }
 
+function setStrictTag(doc, tagName, defaultQName, defaultUri, value, xsiType) {
+  if (!doc) return;
+  const root = doc.documentElement;
+  const elements = doc.getElementsByTagName('*');
+  let target = null;
+
+  for (let el of elements) {
+    if (el.localName === tagName || el.tagName === tagName || el.tagName.endsWith(':' + tagName)) {
+      target = el;
+      break;
+    }
+  }
+
+  // If value is empty or null, remove the element
+  if (value === '' || value === null || value === undefined) {
+    if (target && target.parentNode) {
+      target.parentNode.removeChild(target);
+    }
+    return;
+  }
+
+  if (target) {
+    target.textContent = value;
+    if (xsiType) {
+      target.setAttribute('xsi:type', xsiType);
+    }
+  } else {
+    // Create new element strictly with namespace URI
+    let newEl;
+    if (defaultUri) {
+      newEl = doc.createElementNS(defaultUri, defaultQName);
+    } else {
+      newEl = doc.createElement(defaultQName);
+    }
+    newEl.textContent = value;
+    if (xsiType) {
+      newEl.setAttribute('xsi:type', xsiType);
+    }
+    root.appendChild(newEl);
+  }
+}
+
 // -----------------------------------------------------------------------------
-// Total Time Logic with GSAP pulse
+// Interactive Events & Input Binding
+// -----------------------------------------------------------------------------
+function initEvents() {
+  // Bind input and change events to ALL inputs in the workspace
+  const allInputs = document.querySelectorAll('.craft-input');
+  allInputs.forEach(input => {
+    ['input', 'change'].forEach(ev => {
+      input.addEventListener(ev, () => {
+        syncFormToXmlDocs();
+        setStatus(false, 'Máte neuložené zmeny');
+      });
+    });
+  });
+
+  const rangeSlider = document.getElementById('fTotalTimeRange');
+  if (rangeSlider) {
+    rangeSlider.addEventListener('input', (e) => {
+      setTotalMinutes(e.target.value);
+    });
+  }
+
+  const exactInput = document.getElementById('fTotalTimeExact');
+  if (exactInput) {
+    exactInput.addEventListener('input', (e) => {
+      setTotalMinutes(e.target.value);
+    });
+  }
+
+  // Save Buttons
+  const btnSaveDirect = document.getElementById('btnSaveDirect');
+  if (btnSaveDirect) {
+    btnSaveDirect.addEventListener('click', saveDocumentDirectly);
+  }
+
+  const btnExportCopy = document.getElementById('btnExportCopy');
+  if (btnExportCopy) {
+    btnExportCopy.addEventListener('click', exportDocumentCopy);
+  }
+
+  const btnOpenFileSecondary = document.getElementById('btnOpenFileSecondary');
+  if (btnOpenFileSecondary) {
+    btnOpenFileSecondary.addEventListener('click', async () => {
+      if (window.electronAPI) {
+        const fileData = await window.electronAPI.openFileDialog();
+        if (fileData) {
+          loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+        }
+      } else {
+        document.getElementById('systemFileInput').click();
+      }
+    });
+  }
+
+  // Diff drawer toggles
+  document.getElementById('btnToggleDiff').addEventListener('click', () => {
+    const d = document.getElementById('diffContainer');
+    const isShowing = d.style.display !== 'none';
+    d.style.display = isShowing ? 'none' : 'flex';
+    if (!isShowing && window.gsap) {
+      gsap.fromTo(d, { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.25, ease: 'power2.out' });
+    }
+  });
+
+  document.getElementById('btnCloseDiff').addEventListener('click', () => {
+    document.getElementById('diffContainer').style.display = 'none';
+  });
+
+  // Custom prop add
+  document.getElementById('btnAddNewProp').addEventListener('click', addNewCustomProperty);
+
+  // XML Editor events
+  document.getElementById('xmlArchiveFileSelect').addEventListener('change', (e) => {
+    loadArchiveFileIntoEditor(e.target.value);
+  });
+
+  document.getElementById('btnPrettifyXmlCode').addEventListener('click', () => {
+    const editor = document.getElementById('xmlCodeEditor');
+    editor.value = formatXml(editor.value);
+    showToastNotice('XML kód bol zarovnaný.');
+  });
+
+  document.getElementById('btnSaveXmlCode').addEventListener('click', () => {
+    saveXmlCodeEditorContent();
+  });
+
+  // Presets
+  document.getElementById('btnActionAnonymize').addEventListener('click', actionSanitize);
+  document.getElementById('btnActionSyncDates').addEventListener('click', actionSyncDates);
+  const btnClearTpl = document.getElementById('btnActionClearTemplate');
+  if (btnClearTpl) {
+    btnClearTpl.addEventListener('click', actionClearTemplate);
+  }
+}
+
+function initKeyboardShortcuts() {
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveDocumentDirectly();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
+      e.preventDefault();
+      const btn = document.getElementById('btnOpenFileSecondary');
+      if (btn && btn.style.display !== 'none') {
+        btn.click();
+      } else {
+        document.getElementById('systemFileInput').click();
+      }
+    }
+    if (e.key === 'Escape') {
+      document.getElementById('diffContainer').style.display = 'none';
+    }
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Interactive Timing Helpers
 // -----------------------------------------------------------------------------
 function setTotalMinutes(minutes, triggerSync = true) {
   const m = parseInt(minutes, 10) || 0;
@@ -743,11 +866,10 @@ function setTotalMinutes(minutes, triggerSync = true) {
   document.getElementById('fTotalTimeRange').value = Math.min(m, 2400);
   document.getElementById('timingLargeDisplay').textContent = `${m} min`;
   document.getElementById('timingHumanConverted').textContent = `Zodpovedá: ${formatMinutesToHuman(m)}`;
-  animateMetricText('sideMetaTime', formatMinutesToShort(m));
-
+  
   if (triggerSync) {
     syncFormToXmlDocs();
-    setStatus(false, 'Zmenené pole');
+    setStatus(false, 'Máte neuložené zmeny');
   }
 }
 
@@ -767,140 +889,272 @@ function formatMinutesToShort(m) {
   return `${hours}h ${remaining}m`;
 }
 
-// -----------------------------------------------------------------------------
-// Steppers for Words, Pages, Slides with GSAP Micro-interaction
-// -----------------------------------------------------------------------------
+// Steppers
 function stepWords(delta) {
   const el = document.getElementById('fWords');
   const current = parseInt(el.value || '0', 10);
-  const next = Math.max(0, current + delta);
-  el.value = next;
+  el.value = Math.max(0, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Upravený počet slov');
+  setStatus(false, 'Máte neuložené zmeny');
 }
 
 function stepPages(delta) {
   const el = document.getElementById('fPages');
   const current = parseInt(el.value || '0', 10);
-  const next = Math.max(0, current + delta);
-  el.value = next;
+  el.value = Math.max(0, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Upravený počet strán');
+  setStatus(false, 'Máte neuložené zmeny');
 }
 
 function stepSlides(delta) {
   const el = document.getElementById('fSlides');
   const current = parseInt(el.value || '0', 10);
-  const next = Math.max(0, current + delta);
-  el.value = next;
+  el.value = Math.max(0, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Upravený počet snímkov');
+  setStatus(false, 'Máte neuložené zmeny');
 }
 
-function pulseElement(elem) {
+function stepRevision(delta) {
+  const el = document.getElementById('fRevision');
+  const current = parseInt(el.value || '1', 10);
+  el.value = Math.max(1, current + delta);
+  pulseElement(el);
+  syncFormToXmlDocs();
+  setStatus(false, 'Máte neuložené zmeny');
+}
+
+function pulseElement(el) {
   if (window.gsap) {
-    gsap.fromTo(elem, 
-      { scale: 1.05, borderColor: '#3b82f6' }, 
-      { scale: 1, borderColor: '#202227', duration: 0.22, ease: 'back.out(2)' }
-    );
+    gsap.fromTo(el, { scale: 1.05 }, { scale: 1, duration: 0.22, ease: 'power2.out' });
   }
 }
 
-function animateMetricText(elementId, newText) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  if (el.textContent === newText) return;
+// -----------------------------------------------------------------------------
+// Quick Presets
+// -----------------------------------------------------------------------------
+function actionSanitize() {
+  setVal('fCreator', '');
+  setVal('fLastModifiedBy', '');
+  setVal('fCompany', '');
+  setVal('fManager', '');
+  setVal('fDescription', '');
+  setVal('fTemplate', 'Normal.dotm');
 
-  if (window.gsap) {
-    gsap.to(el, {
-      opacity: 0,
-      y: -3,
-      duration: 0.12,
-      onComplete: () => {
-        el.textContent = newText;
-        gsap.to(el, { opacity: 1, y: 0, duration: 0.16, ease: 'power2.out' });
-      }
-    });
+  syncFormToXmlDocs();
+  setStatus(false, 'Metadáta anonymizované');
+  showToastNotice('Osobné identifikačné údaje a názov šablóny boli odstránené.');
+}
+
+function actionSyncDates() {
+  const created = getVal('fCreated');
+  if (created) {
+    setVal('fModified', created);
   } else {
-    el.textContent = newText;
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const isoNow = now.toISOString().slice(0, 16);
+    setVal('fCreated', isoNow);
+    setVal('fModified', isoNow);
   }
+  syncFormToXmlDocs();
+  setStatus(false, 'Dátumy zosúladené');
+  showToastNotice('Dátum úpravy bol nastavený zhodne s dátumom vytvorenia.');
 }
-const animateBentoText = animateMetricText;
+
+function actionClearTemplate() {
+  setVal('fTemplate', 'Normal.dotm');
+  syncFormToXmlDocs();
+  setStatus(false, 'Šablóna očistená');
+  showToastNotice('Cesta k šablóne bola resetovaná na čistý súbor Normal.dotm.');
+}
+
+function serializeXmlCleanly(doc) {
+  if (!doc) return '';
+  const serializer = new XMLSerializer();
+  let raw = serializer.serializeToString(doc);
+  // Strip any existing XML declaration to prevent duplicates
+  raw = raw.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + raw.trim();
+}
 
 // -----------------------------------------------------------------------------
-// Live Visual Simulators (Windows Explorer & Word/PowerPoint Info)
+// Save & Export Engine (100% Guaranteed Persistence)
 // -----------------------------------------------------------------------------
-function updateLiveSimulators() {
-  const snap = originalSnapshot;
+async function prepareZipPackageForSaving() {
+  if (!currentZip) return null;
 
-  function setSim(id, currentVal, origKey) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = currentVal || '-';
-    if (snap && snap[origKey] !== undefined && snap[origKey] !== currentVal) {
-      el.classList.add('changed');
-    } else {
-      el.classList.remove('changed');
+  syncFormToXmlDocs();
+
+  // 1. Serialize core.xml cleanly
+  if (xmlDocs.core) {
+    currentZip.file('docProps/core.xml', serializeXmlCleanly(xmlDocs.core));
+  }
+
+  // 2. Serialize app.xml cleanly
+  if (xmlDocs.app) {
+    currentZip.file('docProps/app.xml', serializeXmlCleanly(xmlDocs.app));
+  }
+
+  // 3. Serialize custom.xml cleanly
+  if (xmlDocs.custom) {
+    currentZip.file('docProps/custom.xml', serializeXmlCleanly(xmlDocs.custom));
+  }
+
+  const blob = await currentZip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+
+  return blob;
+}
+
+// Direct Save (Overwrites the opened file)
+async function saveDocumentDirectly() {
+  const blob = await prepareZipPackageForSaving();
+  if (!blob) return;
+
+  const arrayBuf = await blob.arrayBuffer();
+  const uint8 = new Uint8Array(arrayBuf);
+
+  // If local file path exists in Electron, overwrite directly
+  if (window.electronAPI && currentFileInfo.path && window.electronAPI.saveDirect) {
+    const result = await window.electronAPI.saveDirect(currentFileInfo.path, uint8);
+    if (result && result.success) {
+      currentFileInfo.size = uint8.byteLength;
+      updateDocumentMetadataHeader();
+      saveSnapshot();
+      updateDiffSummary();
+      updateLiveSimulators();
+      setStatus(true, 'Uložené na disk');
+      showToastNotice(`Zmeny boli úspešne uložené do: ${currentFileInfo.name}`);
+      pulseElement(document.getElementById('btnSaveDirect'));
+      return;
     }
   }
 
-  // Windows Explorer Properties
-  setSim('simTitle', getVal('fTitle'), 'title');
-  setSim('simSubject', getVal('fSubject'), 'subject');
-  setSim('simKeywords', getVal('fKeywords'), 'keywords');
-  setSim('simCategory', getVal('fCategory'), 'category');
-  setSim('simComments', getVal('fDescription'), 'description');
-
-  setSim('simAuthors', getVal('fCreator'), 'creator');
-  setSim('simLastAuthor', getVal('fLastModifiedBy'), 'lastModifiedBy');
-  setSim('simRevision', getVal('fRevision'), 'revision');
-  setSim('simProgram', `${getVal('fApplication')} ${getVal('fAppVersion')}`.trim(), 'app');
-  setSim('simCompany', getVal('fCompany'), 'company');
-  setSim('simManager', getVal('fManager'), 'manager');
-
-  const totalMin = parseInt(getVal('fTotalTimeExact') || '0', 10);
-  setSim('simTotalTime', `${totalMin} minút (${formatMinutesToShort(totalMin)})`, 'totalTime');
-  setSim('simPages', getVal('fPages'), 'pages');
-  setSim('simWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
-  setSim('simSlides', getVal('fSlides'), 'slides');
-  setSim('simCharacters', Number(getVal('fCharacters') || 0).toLocaleString(), 'characters');
-  setSim('simLines', getVal('fLines'), 'lines');
-  setSim('simParagraphs', getVal('fParagraphs'), 'paragraphs');
-
-  setSim('simCreated', formatPrettyDate(getVal('fCreated')), 'created');
-  setSim('simModified', formatPrettyDate(getVal('fModified')), 'modified');
-
-  // Office Info Panel
-  setSim('simWordSize', formatBytes(currentFileInfo.size), 'size');
-  if (currentFileInfo.type === 'pptx') {
-    setSim('simWordPages', `${getVal('fSlides') || 0} snímkov`, 'slides');
-    setSim('simWordWords', `${getVal('fNotes') || 0} poznámok`, 'notes');
-  } else {
-    setSim('simWordPages', getVal('fPages'), 'pages');
-    setSim('simWordWords', Number(getVal('fWords') || 0).toLocaleString(), 'words');
-  }
-  setSim('simWordTotalTime', `${totalMin} minút`, 'totalTime');
-  setSim('simWordCreated', formatPrettyDate(getVal('fCreated')), 'created');
-  setSim('simWordModified', formatPrettyDate(getVal('fModified')), 'modified');
-  setSim('simWordAuthor', getVal('fCreator'), 'creator');
-  setSim('simWordLastModified', getVal('fLastModifiedBy'), 'lastModifiedBy');
+  // If no direct local path (e.g. sample doc or web fallback), prompt save dialog
+  await exportDocumentCopy();
 }
 
-function formatPrettyDate(dateLocalStr) {
-  if (!dateLocalStr) return '-';
-  try {
-    const d = new Date(dateLocalStr);
-    return d.toLocaleString('sk-SK', { dateStyle: 'medium', timeStyle: 'short' });
-  } catch {
-    return dateLocalStr;
+// Save As / Export Copy (Prompts Save Dialog)
+async function exportDocumentCopy() {
+  const blob = await prepareZipPackageForSaving();
+  if (!blob) return;
+
+  const origName = currentFileInfo.name || 'dokument.docx';
+  const dotIdx = origName.lastIndexOf('.');
+  const base = dotIdx !== -1 ? origName.substring(0, dotIdx) : origName;
+  const ext = dotIdx !== -1 ? origName.substring(dotIdx) : '.docx';
+  const exportName = `${base}_upravene${ext}`;
+
+  if (window.electronAPI) {
+    const arrayBuf = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(arrayBuf);
+    const result = await window.electronAPI.saveFileDialog(exportName, uint8);
+    if (result && result.success) {
+      saveSnapshot();
+      updateDiffSummary();
+      updateLiveSimulators();
+      setStatus(true, 'Kópia uložená na disk');
+      showToastNotice(`Kópia bola úspešne uložená: ${result.savedPath}`);
+      pulseElement(document.getElementById('btnExportCopy'));
+    }
+  } else {
+    // Browser fallback
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = exportName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    saveSnapshot();
+    updateDiffSummary();
+    updateLiveSimulators();
+    setStatus(true, 'Stiahnuté');
+    showToastNotice(`Súbor '${exportName}' bol stiahnutý.`);
   }
 }
 
 // -----------------------------------------------------------------------------
-// Snapshot & Diff Tracking
+// Live Simulator Engine (Prieskumník Windows & MS Office)
+// -----------------------------------------------------------------------------
+function updateLiveSimulators() {
+  const title = getVal('fTitle') || '-';
+  const subject = getVal('fSubject') || '-';
+  const creator = getVal('fCreator') || '-';
+  const lastModifiedBy = getVal('fLastModifiedBy') || '-';
+  const revision = getVal('fRevision') || '1';
+  const totalMin = parseInt(getVal('fTotalTimeExact') || '0', 10);
+  const created = getVal('fCreated') ? formatDatetimeHuman(getVal('fCreated')) : '-';
+  const modified = getVal('fModified') ? formatDatetimeHuman(getVal('fModified')) : '-';
+  const words = getVal('fWords') || '0';
+  const pages = getVal('fPages') || '0';
+  const slides = getVal('fSlides') || '0';
+  const chars = getVal('fCharacters') || '0';
+  const lines = getVal('fLines') || '0';
+  const paras = getVal('fParagraphs') || '0';
+  const company = getVal('fCompany') || '-';
+  const manager = getVal('fManager') || '-';
+  const appName = getVal('fApplication') || 'Microsoft Office';
+
+  // 1. Windows Explorer Details Table
+  setSimField('simTitle', title, originalSnapshot.title);
+  setSimField('simSubject', subject, originalSnapshot.subject);
+  setSimField('simKeywords', getVal('fKeywords') || '-', originalSnapshot.keywords);
+  setSimField('simCategory', getVal('fCategory') || '-', originalSnapshot.category);
+  setSimField('simComments', getVal('fDescription') || '-', originalSnapshot.description);
+  setSimField('simAuthors', creator, originalSnapshot.creator);
+  setSimField('simLastSavedBy', lastModifiedBy, originalSnapshot.lastModifiedBy);
+  setSimField('simRevision', revision, originalSnapshot.revision);
+  setSimField('simProgram', appName, originalSnapshot.application);
+  setSimField('simCompany', company, originalSnapshot.company);
+  setSimField('simManager', manager, originalSnapshot.manager);
+
+  setSimField('simTotalTime', `${totalMin} minút`, `${originalSnapshot.totalTime || 0} minút`);
+  setSimField('simPages', pages, originalSnapshot.pages);
+  setSimField('simWords', words, originalSnapshot.words);
+  setSimField('simCharacters', chars, originalSnapshot.characters);
+  setSimField('simLines', lines, originalSnapshot.lines);
+  setSimField('simParagraphs', paras, originalSnapshot.paragraphs);
+  setSimField('simSlides', slides, originalSnapshot.slides);
+
+  // 2. MS Office Backstage View
+  document.getElementById('simOfficeDocName').textContent = currentFileInfo.name || 'dokument.docx';
+  document.getElementById('simOfficeDocPath').textContent = currentFileInfo.path || `C:\\Users\\User\\Documents\\${currentFileInfo.name || 'dokument.docx'}`;
+  document.getElementById('simOfficeSize').textContent = formatBytes(currentFileInfo.size || 0);
+
+  setSimField('simOfficePages', pages, originalSnapshot.pages);
+  setSimField('simOfficeWords', words, originalSnapshot.words);
+  setSimField('simOfficeTime', `${totalMin} min`, `${originalSnapshot.totalTime || 0} min`);
+  setSimField('simOfficeTitle', title, originalSnapshot.title);
+  setSimField('simOfficeTags', getVal('fKeywords') || '-', originalSnapshot.keywords);
+  setSimField('simOfficeCategory', getVal('fCategory') || '-', originalSnapshot.category);
+  setSimField('simOfficeCreated', created, formatDatetimeHuman(originalSnapshot.created));
+  setSimField('simOfficeModified', modified, formatDatetimeHuman(originalSnapshot.modified));
+  setSimField('simOfficeAuthor', creator, originalSnapshot.creator);
+  setSimField('simOfficeLastSavedBy', lastModifiedBy, originalSnapshot.lastModifiedBy);
+}
+
+function setSimField(elementId, val, originalVal) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.textContent = val;
+  if (originalVal !== undefined && String(val) !== String(originalVal) && originalVal !== '') {
+    el.classList.add('changed');
+  } else {
+    el.classList.remove('changed');
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Diff Engine
 // -----------------------------------------------------------------------------
 function saveSnapshot() {
   originalSnapshot = {
@@ -918,223 +1172,150 @@ function saveSnapshot() {
     totalTime: getVal('fTotalTimeExact'),
     words: getVal('fWords'),
     pages: getVal('fPages'),
-    slides: getVal('fSlides'),
-    notes: getVal('fNotes'),
     characters: getVal('fCharacters'),
     charactersWithSpaces: getVal('fCharactersWithSpaces'),
     paragraphs: getVal('fParagraphs'),
     lines: getVal('fLines'),
+    slides: getVal('fSlides'),
+    notes: getVal('fNotes'),
+    hiddenSlides: getVal('fHiddenSlides'),
     company: getVal('fCompany'),
     manager: getVal('fManager'),
     template: getVal('fTemplate'),
-    app: getVal('fApplication'),
+    application: getVal('fApplication'),
     appVersion: getVal('fAppVersion')
   };
 }
 
 function updateDiffSummary() {
-  const fields = [
-    { label: 'Autor (Creator)', key: 'creator', current: getVal('fCreator') },
-    { label: 'Posledný editor', key: 'lastModifiedBy', current: getVal('fLastModifiedBy') },
-    { label: 'Názov', key: 'title', current: getVal('fTitle') },
-    { label: 'Predmet', key: 'subject', current: getVal('fSubject') },
-    { label: 'Číslo revízie', key: 'revision', current: getVal('fRevision') },
-    { label: 'Čas úprav (minúty)', key: 'totalTime', current: getVal('fTotalTimeExact') },
-    { label: 'Počet slov', key: 'words', current: getVal('fWords') },
-    { label: 'Počet strán', key: 'pages', current: getVal('fPages') },
-    { label: 'Počet snímkov (PPTX)', key: 'slides', current: getVal('fSlides') },
-    { label: 'Šablóna', key: 'template', current: getVal('fTemplate') },
-    { label: 'Spoločnosť', key: 'company', current: getVal('fCompany') },
-    { label: 'Dátum vytvorenia', key: 'created', current: getVal('fCreated') },
-    { label: 'Dátum úpravy', key: 'modified', current: getVal('fModified') }
-  ];
+  const diffList = document.getElementById('diffContentList');
+  const counter = document.getElementById('diffCounter');
+  if (!diffList || !counter) return;
+
+  const fieldLabels = {
+    creator: 'Autor (Creator)',
+    lastModifiedBy: 'Posledný editor',
+    title: 'Názov dokumentu',
+    subject: 'Predmet',
+    keywords: 'Kľúčové slová',
+    category: 'Kategória',
+    contentStatus: 'Stav obsahu',
+    description: 'Popis',
+    revision: 'Číslo revízie',
+    created: 'Dátum vytvorenia',
+    modified: 'Dátum úpravy',
+    totalTime: 'Celkový čas úprav (min)',
+    words: 'Počet slov',
+    pages: 'Počet strán',
+    characters: 'Počet znakov',
+    charactersWithSpaces: 'Znakov s medzerami',
+    paragraphs: 'Počet odsekov',
+    lines: 'Počet riadkov',
+    slides: 'Počet snímkov',
+    company: 'Spoločnosť',
+    manager: 'Manažér',
+    template: 'Šablóna'
+  };
+
+  const currentValues = {
+    creator: getVal('fCreator'),
+    lastModifiedBy: getVal('fLastModifiedBy'),
+    title: getVal('fTitle'),
+    subject: getVal('fSubject'),
+    keywords: getVal('fKeywords'),
+    category: getVal('fCategory'),
+    contentStatus: getVal('fContentStatus'),
+    description: getVal('fDescription'),
+    revision: getVal('fRevision'),
+    created: getVal('fCreated'),
+    modified: getVal('fModified'),
+    totalTime: getVal('fTotalTimeExact'),
+    words: getVal('fWords'),
+    pages: getVal('fPages'),
+    characters: getVal('fCharacters'),
+    charactersWithSpaces: getVal('fCharactersWithSpaces'),
+    paragraphs: getVal('fParagraphs'),
+    lines: getVal('fLines'),
+    slides: getVal('fSlides'),
+    company: getVal('fCompany'),
+    manager: getVal('fManager'),
+    template: getVal('fTemplate')
+  };
 
   const diffs = [];
-  for (let f of fields) {
-    const orig = originalSnapshot[f.key] || '';
-    if (orig !== f.current) {
+  for (let key in currentValues) {
+    const oldVal = originalSnapshot[key] || '';
+    const newVal = currentValues[key] || '';
+    if (oldVal !== newVal) {
       diffs.push({
-        label: f.label,
-        orig: orig || '(prázdne)',
-        current: f.current || '(vymazané)'
+        label: fieldLabels[key] || key,
+        old: oldVal || '(prázdne)',
+        new: newVal || '(odstránené)'
       });
     }
   }
 
-  const badge = document.getElementById('diffCounter');
-  if (badge) badge.textContent = diffs.length;
-
-  const tbody = document.getElementById('diffTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = '';
+  counter.textContent = diffs.length;
 
   if (diffs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-tertiary); padding: 12px;">Žiadne zmeny oproti pôvodnému súboru.</td></tr>`;
-    return;
-  }
-
-  for (let d of diffs) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${escapeHtml(d.label)}</strong></td>
-      <td style="color: var(--text-tertiary); text-decoration: line-through;">${escapeHtml(d.orig)}</td>
-      <td style="color: var(--text-accent); font-weight: 600;">${escapeHtml(d.current)}</td>
-      <td><span class="diff-badge modified">ZMENA</span></td>
-    `;
-    tbody.appendChild(tr);
-  }
-}
-
-// -----------------------------------------------------------------------------
-// Universal Archive Browser & Raw XML Editor
-// -----------------------------------------------------------------------------
-function populateArchiveDropdown() {
-  const select = document.getElementById('xmlArchiveFileSelect');
-  select.innerHTML = '';
-
-  if (!currentZip) return;
-
-  const files = Object.keys(currentZip.files).filter(name => !currentZip.files[name].dir);
-  
-  files.sort((a, b) => {
-    if (a.startsWith('docProps/') && !b.startsWith('docProps/')) return -1;
-    if (!a.startsWith('docProps/') && b.startsWith('docProps/')) return 1;
-    return a.localeCompare(b);
-  });
-
-  for (let path of files) {
-    const opt = document.createElement('option');
-    opt.value = path;
-    opt.textContent = path;
-    if (path === 'docProps/core.xml') opt.selected = true;
-    select.appendChild(opt);
-  }
-
-  activeArchiveFile = select.value || 'docProps/core.xml';
-}
-
-async function loadArchiveFileIntoEditor(path) {
-  activeArchiveFile = path;
-  const editor = document.getElementById('xmlCodeEditor');
-  
-  const serializer = new XMLSerializer();
-  let text = '';
-
-  if (path === 'docProps/core.xml' && xmlDocs.core) {
-    text = serializer.serializeToString(xmlDocs.core);
-  } else if (path === 'docProps/app.xml' && xmlDocs.app) {
-    text = serializer.serializeToString(xmlDocs.app);
-  } else if (path === 'docProps/custom.xml' && xmlDocs.custom) {
-    text = serializer.serializeToString(xmlDocs.custom);
-  } else if (currentZip && currentZip.file(path)) {
-    text = await currentZip.file(path).async('text');
+    diffList.innerHTML = '<div class="empty-diff-text">Zatiaľ neboli vykonané žiadne zmeny oproti načítanému súboru.</div>';
+    setStatus(true, 'Pripravené');
   } else {
-    text = `<!-- Súbor ${path} v archíve neexistuje -->`;
+    diffList.innerHTML = diffs.map(d => `
+      <div class="diff-row">
+        <div class="diff-key">${escapeHtml(d.label)}</div>
+        <div class="diff-val-old">${escapeHtml(d.old)}</div>
+        <div class="diff-val-new">→ ${escapeHtml(d.new)}</div>
+      </div>
+    `).join('');
+    setStatus(false, `${diffs.length} neuložených zmien`);
   }
-
-  editor.value = formatXml(text);
-  document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid';
-  document.getElementById('xmlStatusNotice').style.color = '#22c55e';
-}
-
-async function applyArchiveCodeChanges() {
-  const code = document.getElementById('xmlCodeEditor').value.trim();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(code, 'application/xml');
-
-  const error = doc.querySelector('parsererror');
-  if (error) {
-    document.getElementById('xmlStatusNotice').textContent = 'Syntax: Chyba parsovania!';
-    document.getElementById('xmlStatusNotice').style.color = '#ef4444';
-    alert('Chyba XML syntaxe:\n' + error.textContent);
-    return;
-  }
-
-  document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid & Uložené';
-  document.getElementById('xmlStatusNotice').style.color = '#22c55e';
-
-  if (activeArchiveFile === 'docProps/core.xml') {
-    xmlDocs.core = doc;
-    populateForm();
-  } else if (activeArchiveFile === 'docProps/app.xml') {
-    xmlDocs.app = doc;
-    populateForm();
-  } else if (activeArchiveFile === 'docProps/custom.xml') {
-    xmlDocs.custom = doc;
-    populateForm();
-  } else if (currentZip) {
-    currentZip.file(activeArchiveFile, code);
-  }
-
-  syncFormToXmlDocs();
-  setStatus(false, 'Zmeny aplikované');
-  showToastNotice(`Zmeny v '${activeArchiveFile}' boli uložené do balíka.`);
 }
 
 // -----------------------------------------------------------------------------
-// Custom Properties
+// Custom Properties (docProps/custom.xml)
 // -----------------------------------------------------------------------------
 function renderCustomPropertiesTable() {
   const tbody = document.getElementById('customPropsTableBody');
+  if (!tbody || !xmlDocs.custom) return;
+
   tbody.innerHTML = '';
+  const root = xmlDocs.custom.documentElement;
+  const props = root.getElementsByTagName('*');
+  const customList = [];
 
-  if (!xmlDocs.custom) return;
+  for (let p of props) {
+    if (p.localName === 'property') {
+      const name = p.getAttribute('name') || '';
+      let val = '';
+      for (let child of p.childNodes) {
+        if (child.nodeType === 1) {
+          val = child.textContent;
+          break;
+        }
+      }
+      customList.push({ name, val });
+    }
+  }
 
-  const props = xmlDocs.custom.getElementsByTagName('property');
-  if (props.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-tertiary); padding: 20px;">Žiadne vlastné atribúty.</td></tr>`;
+  if (customList.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-diff-text">Žiadne vlastné atribúty nie sú definované.</td></tr>';
     return;
   }
 
-  for (let p of props) {
-    const name = p.getAttribute('name') || 'Atribút';
-    const val = p.textContent.trim();
-
+  customList.forEach((item, index) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><span style="font-weight: 600; font-family: var(--font-mono); font-size: 11px;">${escapeHtml(name)}</span></td>
-      <td><input type="text" class="input-field prop-inline-edit" data-name="${escapeHtml(name)}" value="${escapeHtml(val)}"></td>
-      <td style="text-align: right;">
-        <button class="btn btn-secondary btn-sm" onclick="removeCustomProperty('${escapeHtml(name)}')">Zmazať</button>
+      <td style="font-weight: 600;">${escapeHtml(item.name)}</td>
+      <td style="font-family: var(--font-mono);">${escapeHtml(item.val)}</td>
+      <td style="text-align: center;">
+        <button class="btn btn-icon btn-ghost" onclick="deleteCustomProperty('${escapeHtml(item.name)}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
       </td>
     `;
     tbody.appendChild(tr);
-  }
-
-  document.querySelectorAll('.prop-inline-edit').forEach(input => {
-    input.addEventListener('input', (e) => {
-      const propName = e.target.getAttribute('data-name');
-      updateCustomPropValue(propName, e.target.value);
-    });
   });
-}
-
-function updateCustomPropValue(name, val) {
-  const props = xmlDocs.custom.getElementsByTagName('property');
-  for (let p of props) {
-    if (p.getAttribute('name') === name) {
-      if (p.firstElementChild) {
-        p.firstElementChild.textContent = val;
-      } else {
-        p.textContent = val;
-      }
-      setStatus(false, 'Zmenený atribút');
-      break;
-    }
-  }
-}
-
-function removeCustomProperty(name) {
-  const props = xmlDocs.custom.getElementsByTagName('property');
-  for (let p of props) {
-    if (p.getAttribute('name') === name) {
-      p.parentNode.removeChild(p);
-      renderCustomPropertiesTable();
-      setStatus(false, 'Odstránený atribút');
-      showToastNotice(`Atribút '${name}' bol zmazaný.`);
-      break;
-    }
-  }
 }
 
 function addNewCustomProperty() {
@@ -1143,258 +1324,192 @@ function addNewCustomProperty() {
   const name = nameInput.value.trim();
   const val = valInput.value.trim();
 
-  if (!name) return;
+  if (!name) {
+    alert('Zadajte názov atribútu.');
+    return;
+  }
+
+  if (!xmlDocs.custom) {
+    const parser = new DOMParser();
+    xmlDocs.custom = parser.parseFromString(createBlankCustomXml(), 'application/xml');
+  }
 
   const root = xmlDocs.custom.documentElement;
-  const existing = xmlDocs.custom.getElementsByTagName('property');
-  let maxPid = 1;
-  for (let p of existing) {
-    const pid = parseInt(p.getAttribute('pid') || '1', 10);
-    if (pid > maxPid) maxPid = pid;
-  }
+  const propEl = xmlDocs.custom.createElementNS(NS.custom, 'property');
+  propEl.setAttribute('fmtid', '{D5CDD505-2E9C-101B-9397-08002B2CF9AE}');
+  propEl.setAttribute('pid', String(root.getElementsByTagName('*').length + 2));
+  propEl.setAttribute('name', name);
 
-  const prop = xmlDocs.custom.createElement('property');
-  prop.setAttribute('fmtid', '{D5CDD505-2E9C-101B-9397-08002B2CF9AE}');
-  prop.setAttribute('pid', String(maxPid + 1));
-  prop.setAttribute('name', name);
+  const valEl = xmlDocs.custom.createElementNS(NS.vt, 'vt:lpwstr');
+  valEl.textContent = val;
+  propEl.appendChild(valEl);
+  root.appendChild(propEl);
 
-  const lpwstr = xmlDocs.custom.createElement('vt:lpwstr');
-  lpwstr.textContent = val;
-  prop.appendChild(lpwstr);
-
-  root.appendChild(prop);
-  renderCustomPropertiesTable();
   nameInput.value = '';
   valInput.value = '';
-  setStatus(false, 'Pridaný atribút');
-  showToastNotice(`Atribút '${name}' pridaný.`);
+  renderCustomPropertiesTable();
+  setStatus(false, 'Pridaný vlastný atribút');
+  showToastNotice(`Vlastný atribút '${name}' bol pridaný.`);
 }
 
-// -----------------------------------------------------------------------------
-// Quick Actions
-// -----------------------------------------------------------------------------
-function actionSanitize() {
-  setVal('fCreator', '');
-  setVal('fLastModifiedBy', '');
-  setVal('fCompany', '');
-  setVal('fManager', '');
-  setVal('fTemplate', 'Normal.dotm');
-  setVal('fDescription', '');
-  syncFormToXmlDocs();
-  setStatus(false, 'Anonymizované');
-  showToastNotice('Osobné stopy (autor, editor, firma, cesta šablóny) boli vymazané.');
-}
-
-function actionSyncDates() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  const formatted = now.toISOString().slice(0, 16);
-  setVal('fCreated', formatted);
-  setVal('fModified', formatted);
-  syncFormToXmlDocs();
-  setStatus(false, 'Zosúladené dátumy');
-  showToastNotice('Dátumy vytvorenia a úpravy boli synchronizované.');
-}
-
-function actionClearTemplate() {
-  setVal('fTemplate', 'Normal.dotm');
-  syncFormToXmlDocs();
-  setStatus(false, 'Šablóna očistená');
-  showToastNotice('Cesta k šablóne zresetovaná na generický Normal.dotm.');
-}
-
-// -----------------------------------------------------------------------------
-// Export & Save File
-// -----------------------------------------------------------------------------
-async function exportModifiedPackage() {
-  if (!currentZip) return;
-
-  syncFormToXmlDocs();
-
-  const serializer = new XMLSerializer();
-
-  if (xmlDocs.core) {
-    const s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.core);
-    currentZip.file('docProps/core.xml', s);
+window.deleteCustomProperty = function(propName) {
+  if (!xmlDocs.custom) return;
+  const root = xmlDocs.custom.documentElement;
+  for (let p of root.getElementsByTagName('*')) {
+    if (p.localName === 'property' && p.getAttribute('name') === propName) {
+      p.parentNode.removeChild(p);
+      break;
+    }
   }
+  renderCustomPropertiesTable();
+  setStatus(false, 'Odstránený vlastný atribút');
+  showToastNotice(`Vlastný atribút '${propName}' bol vymazaný.`);
+};
 
-  if (xmlDocs.app) {
-    const s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.app);
-    currentZip.file('docProps/app.xml', s);
-  }
+// -----------------------------------------------------------------------------
+// Direct XML Editor
+// -----------------------------------------------------------------------------
+function populateArchiveDropdown() {
+  const select = document.getElementById('xmlArchiveFileSelect');
+  if (!select || !currentZip) return;
 
-  if (xmlDocs.custom) {
-    const s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.custom);
-    currentZip.file('docProps/custom.xml', s);
-  }
-
-  const origName = currentFileInfo.name || 'dokument.docx';
-  const dotIdx = origName.lastIndexOf('.');
-  const base = dotIdx !== -1 ? origName.substring(0, dotIdx) : origName;
-  const ext = dotIdx !== -1 ? origName.substring(dotIdx) : '';
-  const exportName = `${base}_upravene${ext}`;
-
-  const blob = await currentZip.generateAsync({
-    type: 'blob',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 }
+  select.innerHTML = '';
+  const files = Object.keys(currentZip.files).filter(f => f.endsWith('.xml') || f.endsWith('.rels'));
+  
+  // Prioritize core, app, custom
+  const priority = ['docProps/core.xml', 'docProps/app.xml', 'docProps/custom.xml'];
+  priority.forEach(p => {
+    if (files.includes(p)) {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      select.appendChild(opt);
+    }
   });
 
-  if (window.electronAPI) {
-    const arrayBuf = await blob.arrayBuffer();
-    const result = await window.electronAPI.saveFileDialog(exportName, Array.from(new Uint8Array(arrayBuf)));
-    if (result && result.success) {
-      saveSnapshot();
-      updateDiffSummary();
-      updateLiveSimulators();
-      setStatus(true, 'Uložené na disk');
-      showToastNotice(`Súbor bol úspešne uložený: ${result.savedPath}`);
-      if (window.gsap) {
-        gsap.fromTo('#btnExportPrimary', 
-          { scale: 1.06 }, 
-          { scale: 1, duration: 0.35, ease: 'back.out(2)' }
-        );
-      }
+  files.forEach(f => {
+    if (!priority.includes(f)) {
+      const opt = document.createElement('option');
+      opt.value = f;
+      opt.textContent = f;
+      select.appendChild(opt);
     }
-  } else {
-    // Browser fallback
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = exportName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  });
 
-    saveSnapshot();
-    updateDiffSummary();
-    updateLiveSimulators();
-    setStatus(true, 'Stiahnuté');
-    showToastNotice(`Súbor '${exportName}' bol vyexportovaný.`);
-    if (window.gsap) {
-      gsap.fromTo('#btnExportPrimary', 
-        { scale: 1.06 }, 
-        { scale: 1, duration: 0.35, ease: 'back.out(2)' }
-      );
-    }
+  if (select.options.length > 0) {
+    loadArchiveFileIntoEditor(select.options[0].value);
   }
 }
 
-// -----------------------------------------------------------------------------
-// Interactive Events & Helpers
-// -----------------------------------------------------------------------------
-function initEvents() {
-  document.querySelectorAll('.input-field').forEach(input => {
-    input.addEventListener('input', () => {
-      syncFormToXmlDocs();
-      setStatus(false, 'Máte neuložené zmeny');
-    });
-  });
+async function loadArchiveFileIntoEditor(filename) {
+  if (!currentZip || !filename) return;
+  const file = currentZip.file(filename);
+  if (!file) return;
 
-  document.getElementById('fTotalTimeRange').addEventListener('input', (e) => {
-    setTotalMinutes(e.target.value);
-  });
-
-  document.getElementById('fTotalTimeExact').addEventListener('input', (e) => {
-    setTotalMinutes(e.target.value);
-  });
-
-  document.getElementById('btnActionAnonymize').addEventListener('click', actionSanitize);
-  document.getElementById('btnActionSyncDates').addEventListener('click', actionSyncDates);
-  document.getElementById('btnActionClearTemplate').addEventListener('click', actionClearTemplate);
-
-  document.getElementById('btnExportPrimary').addEventListener('click', exportModifiedPackage);
-  document.getElementById('btnOpenFileSecondary').addEventListener('click', async () => {
-    if (window.electronAPI) {
-      const fileData = await window.electronAPI.openFileDialog();
-      if (fileData) {
-        loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
-      }
-    } else {
-      document.getElementById('systemFileInput').click();
-    }
-  });
-
-  document.getElementById('btnToggleDiff').addEventListener('click', () => {
-    const d = document.getElementById('diffContainer');
-    const isShowing = d.style.display !== 'none';
-    d.style.display = isShowing ? 'none' : 'block';
-    if (!isShowing && window.gsap) {
-      gsap.fromTo(d, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, ease: 'power2.out' });
-    }
-  });
-
-  document.getElementById('btnCloseDiff').addEventListener('click', () => {
-    document.getElementById('diffContainer').style.display = 'none';
-  });
-
-  document.getElementById('btnAddNewProp').addEventListener('click', addNewCustomProperty);
-
-  document.getElementById('xmlArchiveFileSelect').addEventListener('change', (e) => {
-    loadArchiveFileIntoEditor(e.target.value);
-  });
-
-  document.getElementById('btnPrettifyXmlCode').addEventListener('click', () => {
-    const editor = document.getElementById('xmlCodeEditor');
-    editor.value = formatXml(editor.value);
-    showToastNotice('XML kód bol naformátovaný.');
-  });
-
-  document.getElementById('btnApplyXmlCode').addEventListener('click', applyArchiveCodeChanges);
-
-  document.getElementById('btnLoadSample').addEventListener('click', loadSamplePackage);
+  const content = await file.async('text');
+  document.getElementById('xmlCodeEditor').value = formatXml(content);
 }
 
-function initKeyboardShortcuts() {
-  window.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-      e.preventDefault();
-      exportModifiedPackage();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
-      e.preventDefault();
-      document.getElementById('systemFileInput').click();
-    }
-  });
-}
+async function saveXmlCodeEditorContent() {
+  const select = document.getElementById('xmlArchiveFileSelect');
+  const filename = select.value;
+  const content = document.getElementById('xmlCodeEditor').value;
 
-// -----------------------------------------------------------------------------
-// Utility Functions
-// -----------------------------------------------------------------------------
-function setStatus(isClean, text) {
-  const bullet = document.getElementById('statusBullet');
-  const txt = document.getElementById('statusText');
-  const headerDot = document.getElementById('headerStatusDot');
+  if (!currentZip || !filename) return;
 
-  if (isClean) {
-    if (bullet) bullet.className = 'status-dot synced';
-    if (txt) txt.textContent = text || 'Pripravené';
-    if (headerDot) headerDot.className = 'status-dot synced';
-  } else {
-    if (bullet) bullet.className = 'status-dot dirty';
-    if (txt) txt.textContent = text || 'Máte neuložené zmeny';
-    if (headerDot) headerDot.className = 'status-dot dirty';
+  currentZip.file(filename, content);
+
+  // If core, app or custom was edited, refresh in-memory DOM
+  const parser = new DOMParser();
+  if (filename === 'docProps/core.xml') {
+    xmlDocs.core = parser.parseFromString(content, 'application/xml');
+    populateForm();
+  } else if (filename === 'docProps/app.xml') {
+    xmlDocs.app = parser.parseFromString(content, 'application/xml');
+    populateForm();
+  } else if (filename === 'docProps/custom.xml') {
+    xmlDocs.custom = parser.parseFromString(content, 'application/xml');
+    renderCustomPropertiesTable();
   }
+
+  setStatus(false, 'XML súbor upravený');
+  showToastNotice(`Zmeny v '${filename}' boli zapísané.`);
 }
 
-function showToastNotice(msg) {
-  const toast = document.getElementById('toastNotice');
-  const text = document.getElementById('toastNoticeText');
-  text.textContent = msg;
-  toast.classList.add('show');
-  if (window.gsap) {
-    gsap.fromTo(toast, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.25, ease: 'back.out(1.5)' });
-  }
-  setTimeout(() => {
-    if (window.gsap) {
-      gsap.to(toast, { opacity: 0, y: 8, duration: 0.2, onComplete: () => toast.classList.remove('show') });
-    } else {
-      toast.classList.remove('show');
-    }
-  }, 3200);
+// -----------------------------------------------------------------------------
+// Sample Document Generator
+// -----------------------------------------------------------------------------
+async function loadSampleDiplomovka() {
+  const sampleZip = new JSZip();
+
+  sampleZip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>
+</Types>`);
+
+  sampleZip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/>
+</Relationships>`);
+
+  sampleZip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" 
+                   xmlns:dc="http://purl.org/dc/elements/1.1/" 
+                   xmlns:dcterms="http://purl.org/dc/terms/" 
+                   xmlns:dcmitype="http://purl.org/dc/dcmitype/" 
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <dc:title>Diplomová práca - Analýza trhových anomálií</dc:title>
+    <dc:subject>Aplikovaná ekonometria</dc:subject>
+    <dc:creator>Ján Novák</dc:creator>
+    <cp:keywords>analýza, ekonometria, modelovanie, dáta</cp:keywords>
+    <dc:description>Záverečná diplomová práca pre obhajobu.</dc:description>
+    <cp:lastModifiedBy>Ján Novák</cp:lastModifiedBy>
+    <cp:revision>24</cp:revision>
+    <dcterms:created xsi:type="dcterms:W3CDTF">2025-10-15T08:30:00Z</dcterms:created>
+    <dcterms:modified xsi:type="dcterms:W3CDTF">2026-02-28T16:45:00Z</dcterms:modified>
+    <cp:category>Záverečné práce</cp:category>
+    <cp:contentStatus>Finálna verzia</cp:contentStatus>
+</cp:coreProperties>`);
+
+  sampleZip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+    <Template>C:\\Users\\Admin\\Templates\\Normal.dotm</Template>
+    <TotalTime>540</TotalTime>
+    <Pages>48</Pages>
+    <Words>14250</Words>
+    <Characters>89100</Characters>
+    <Application>Microsoft Office Word</Application>
+    <DocSecurity>0</DocSecurity>
+    <Lines>1450</Lines>
+    <Paragraphs>420</Paragraphs>
+    <ScaleCrop>false</ScaleCrop>
+    <Company>Technická Univerzita</Company>
+    <Manager>Prof. Ing. Martin Kováč, DrSc.</Manager>
+    <CharactersWithSpaces>104200</CharactersWithSpaces>
+    <AppVersion>16.0000</AppVersion>
+</Properties>`);
+
+  sampleZip.file('docProps/custom.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Interné Číslo"><vt:lpwstr>INT-2026-DOC-042</vt:lpwstr></property>
+    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Dôvernosť"><vt:lpwstr>Prísne tajné</vt:lpwstr></property>
+</Properties>`);
+
+  const blob = await sampleZip.generateAsync({ type: 'blob' });
+  const buf = await blob.arrayBuffer();
+
+  loadFromBinaryBuffer(buf, 'Vzorova_diplomovka.docx', buf.byteLength, 'samples/vzorka_diplomovka.docx');
 }
 
+// -----------------------------------------------------------------------------
+// Utilities
+// -----------------------------------------------------------------------------
 function getVal(id) {
   const el = document.getElementById(id);
   return el ? el.value : '';
@@ -1416,35 +1531,6 @@ function getTagValue(doc, tagName) {
   return '';
 }
 
-function setTagValue(doc, tagName, defaultQualifiedName, value) {
-  if (!doc) return;
-  const root = doc.documentElement;
-  const elements = doc.getElementsByTagName('*');
-  let target = null;
-  for (let el of elements) {
-    if (el.localName === tagName || el.tagName === tagName || el.tagName.endsWith(':' + tagName)) {
-      target = el;
-      break;
-    }
-  }
-
-  if (value === '' || value === null || value === undefined) {
-    if (target) target.parentNode.removeChild(target);
-    return;
-  }
-
-  if (target) {
-    target.textContent = value;
-  } else {
-    const newEl = doc.createElement(defaultQualifiedName);
-    newEl.textContent = value;
-    if (defaultQualifiedName.startsWith('dcterms:')) {
-      newEl.setAttribute('xsi:type', 'dcterms:W3CDTF');
-    }
-    root.appendChild(newEl);
-  }
-}
-
 function isoToDatetimeLocal(isoStr) {
   if (!isoStr) return '';
   try {
@@ -1461,22 +1547,71 @@ function datetimeLocalToIso(localStr) {
   if (!localStr) return '';
   try {
     const d = new Date(localStr);
+    if (isNaN(d.getTime())) return '';
     return d.toISOString();
   } catch {
     return '';
   }
 }
 
+function formatDatetimeHuman(isoOrLocal) {
+  if (!isoOrLocal) return '-';
+  try {
+    const d = new Date(isoOrLocal);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('sk-SK') + ' ' + d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '-';
+  }
+}
+
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
+  if (!bytes || bytes === 0) return '0 KB';
   const k = 1024;
+  const dm = 1;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 function escapeHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function setStatus(isSynced, text) {
+  const bullet = document.getElementById('statusBullet');
+  const txt = document.getElementById('statusText');
+  const topDot = document.getElementById('topStatusDot');
+
+  if (isSynced) {
+    if (bullet) bullet.className = 'status-dot synced';
+    if (topDot) topDot.className = 'status-dot synced';
+    if (txt) txt.textContent = text || 'Pripravené';
+  } else {
+    if (bullet) bullet.className = 'status-dot dirty';
+    if (topDot) topDot.className = 'status-dot dirty';
+    if (txt) txt.textContent = text || 'Máte neuložené zmeny';
+  }
+}
+
+function showToastNotice(msg) {
+  const toast = document.getElementById('toastNotice');
+  const text = document.getElementById('toastNoticeText');
+  if (!toast || !text) return;
+  text.textContent = msg;
+  toast.classList.add('show');
+  if (window.gsap) {
+    gsap.fromTo(toast, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.25, ease: 'back.out(1.5)' });
+  }
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3200);
 }
 
 function formatXml(xml) {
@@ -1495,10 +1630,10 @@ function formatXml(xml) {
     } else {
       indent = 0;
     }
-
     let padding = '';
-    for (let i = 0; i < pad; i++) padding += '  ';
-
+    for (let i = 0; i < pad; i++) {
+      padding += '  ';
+    }
     formatted += padding + node + '\r\n';
     pad += indent;
   });
@@ -1507,83 +1642,25 @@ function formatXml(xml) {
 
 function createBlankCoreXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="${NS.cp}" xmlns:dc="${NS.dc}" xmlns:dcterms="${NS.dcterms}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<cp:coreProperties xmlns:cp="${NS.cp}" xmlns:dc="${NS.dc}" xmlns:dcterms="${NS.dcterms}" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="${NS.xsi}">
+  <dc:title></dc:title>
+  <dc:creator></dc:creator>
+  <cp:lastModifiedBy></cp:lastModifiedBy>
+  <cp:revision>1</cp:revision>
 </cp:coreProperties>`;
 }
 
 function createBlankAppXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="${NS.ep}" xmlns:vt="${NS.vt}">
+  <TotalTime>0</TotalTime>
+  <Words>0</Words>
+  <Pages>1</Pages>
 </Properties>`;
 }
 
 function createBlankCustomXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="${NS.cust}" xmlns:vt="${NS.vt}">
+<Properties xmlns="${NS.custom}" xmlns:vt="${NS.vt}">
 </Properties>`;
-}
-
-async function loadSamplePackage() {
-  const sampleZip = new JSZip();
-
-  const coreXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" 
-                   xmlns:dc="http://purl.org/dc/elements/1.1/" 
-                   xmlns:dcterms="http://purl.org/dc/terms/" 
-                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <dc:title>Diplomová práca - Analýza trhových anomálií</dc:title>
-    <dc:subject>Aplikovaná ekonometria</dc:subject>
-    <dc:creator>Ján Novák</dc:creator>
-    <cp:keywords>financie, investície, analýza, modelovanie</cp:keywords>
-    <dc:description>Záverečný dokument pre interné hodnotenie.</dc:description>
-    <cp:lastModifiedBy>Peter Vedúci</cp:lastModifiedBy>
-    <cp:revision>28</cp:revision>
-    <dcterms:created xsi:type="dcterms:W3CDTF">2025-11-10T09:15:00Z</dcterms:created>
-    <dcterms:modified xsi:type="dcterms:W3CDTF">2026-02-28T16:45:00Z</dcterms:modified>
-    <cp:category>Záverečné práce</cp:category>
-    <cp:contentStatus>Finálna verzia</cp:contentStatus>
-</cp:coreProperties>`;
-
-  const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <Template>C:\\Users\\Author\\Templates\\Normal.dotm</Template>
-    <TotalTime>580</TotalTime>
-    <Pages>52</Pages>
-    <Words>15420</Words>
-    <Characters>94300</Characters>
-    <Application>Microsoft Office Word</Application>
-    <DocSecurity>0</DocSecurity>
-    <Lines>1580</Lines>
-    <Paragraphs>460</Paragraphs>
-    <ScaleCrop>false</ScaleCrop>
-    <Company>Technická Univerzita</Company>
-    <Manager>Prof. Ing. Martin Kováč, DrSc.</Manager>
-    <CharactersWithSpaces>112400</CharactersWithSpaces>
-    <AppVersion>16.0000</AppVersion>
-</Properties>`;
-
-  const customXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="ID Projektu"><vt:lpwstr>PRJ-2026-09</vt:lpwstr></property>
-    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Dôvernosť"><vt:lpwstr>Interné</vt:lpwstr></property>
-</Properties>`;
-
-  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-    <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-    <Default Extension="xml" ContentType="application/xml"/>
-    <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
-    <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
-    <Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>
-</Types>`;
-
-  sampleZip.file('[Content_Types].xml', contentTypes);
-  sampleZip.file('docProps/core.xml', coreXml);
-  sampleZip.file('docProps/app.xml', appXml);
-  sampleZip.file('docProps/custom.xml', customXml);
-
-  const blob = await sampleZip.generateAsync({ type: 'blob' });
-  const buf = await blob.arrayBuffer();
-
-  loadFromBinaryBuffer(buf, 'Vzorova_diplomovka.docx', buf.byteLength, 'samples/Vzorova_diplomovka.docx');
 }
