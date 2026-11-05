@@ -25,8 +25,21 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      webSecurity: true
     }
+  });
+
+  // Security: prevent navigation to external or untrusted URLs
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) {
+      event.preventDefault();
+    }
+  });
+
+  // Security: deny all requests to open new windows
+  mainWindow.webContents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
   });
 
   mainWindow.loadFile('index.html');
@@ -84,17 +97,24 @@ ipcMain.handle('dialog:openFile', async () => {
 });
 
 ipcMain.handle('file:readFromPath', async (event, filePath) => {
+  if (!filePath || typeof filePath !== 'string' || !path.isAbsolute(filePath)) return null;
   if (!fs.existsSync(filePath)) return null;
-  const buffer = fs.readFileSync(filePath);
-  return {
-    filePath,
-    fileName: path.basename(filePath),
-    fileSize: fs.statSync(filePath).size,
-    buffer: buffer
-  };
+  try {
+    const buffer = fs.readFileSync(filePath);
+    return {
+      filePath,
+      fileName: path.basename(filePath),
+      fileSize: fs.statSync(filePath).size,
+      buffer: buffer
+    };
+  } catch (e) {
+    return null;
+  }
 });
 
-ipcMain.handle('dialog:saveFile', async (event, { defaultName, bufferData }) => {
+ipcMain.handle('dialog:saveFile', async (event, payload) => {
+  if (!payload || !payload.bufferData) return { success: false, error: 'Neplatné dáta' };
+  const defaultName = typeof payload.defaultName === 'string' ? path.basename(payload.defaultName) : 'dokument.docx';
   const result = await dialog.showSaveDialog(mainWindow, {
     defaultPath: defaultName,
     filters: [
@@ -106,19 +126,26 @@ ipcMain.handle('dialog:saveFile', async (event, { defaultName, bufferData }) => 
     return { success: false };
   }
 
-  const buffer = Buffer.from(bufferData);
-  fs.writeFileSync(result.filePath, buffer);
-  return { success: true, savedPath: result.filePath };
+  try {
+    const buffer = Buffer.from(payload.bufferData);
+    fs.writeFileSync(result.filePath, buffer);
+    return { success: true, savedPath: result.filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
 });
 
-ipcMain.handle('file:saveDirect', async (event, { filePath, bufferData }) => {
-  if (!filePath) {
-    return { success: false, error: 'Neplatná cesta k súboru' };
+ipcMain.handle('file:saveDirect', async (event, payload) => {
+  if (!payload || !payload.filePath || typeof payload.filePath !== 'string' || !payload.bufferData) {
+    return { success: false, error: 'Neplatné vstupné parametre' };
+  }
+  if (!path.isAbsolute(payload.filePath)) {
+    return { success: false, error: 'Vyžaduje sa absolútna cesta' };
   }
   try {
-    const buffer = Buffer.from(bufferData);
-    fs.writeFileSync(filePath, buffer);
-    return { success: true, savedPath: filePath };
+    const buffer = Buffer.from(payload.bufferData);
+    fs.writeFileSync(payload.filePath, buffer);
+    return { success: true, savedPath: payload.filePath };
   } catch (err) {
     return { success: false, error: err.message };
   }

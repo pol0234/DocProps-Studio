@@ -4,6 +4,7 @@ node_modules/
 # Python
 __pycache__/
 *.pyc
+*.pyo
 
 # OS generated
 Thumbs.db
@@ -16,9 +17,23 @@ $RECYCLE.BIN/
 dist/
 build/
 
-# Temporary outputs
+# Temporary outputs & test files
 temp_test/
 *.tmp
 test_*.docx
+test_*.xlsx
+test_*.pptx
 *.log
+scratch/
+
+# Environment & Secrets (Safety)
+.env
+.env.*
+*.pem
+*.key
+*.cert
+
+# Editor & IDE
+.vscode/
+.idea/
 
