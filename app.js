@@ -184,7 +184,7 @@ function startAmbientHeroCanvas() {
 
 function initSpotlightCards() {
   document.addEventListener('mousemove', (e) => {
-    const cards = document.querySelectorAll('.spotlight-card, .input-card, .doc-card, .timing-module, .sim-window');
+    const cards = document.querySelectorAll('.spotlight-card, .bento-card, .sidebar-doc-card, .sim-preview-window, .hero-dropzone-box');
     cards.forEach(card => {
       const rect = card.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -237,7 +237,7 @@ function updateThemeIcon(theme) {
 // Navigation Between Sections with GSAP
 // -----------------------------------------------------------------------------
 function initNavigation() {
-  const navItems = document.querySelectorAll('.nav-item');
+  const navItems = document.querySelectorAll('.nav-tab-btn, .nav-item');
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       navItems.forEach(n => n.classList.remove('active'));
@@ -256,7 +256,7 @@ function initNavigation() {
             { opacity: 0, y: 10 }, 
             { opacity: 1, y: 0, duration: 0.24, ease: 'power2.out' }
           );
-          gsap.fromTo(targetSec.querySelectorAll('.input-card, .timing-module, .sim-window, .raw-xml-container'),
+          gsap.fromTo(targetSec.querySelectorAll('.bento-card, .sim-preview-window, .custom-props-container, .raw-xml-container'),
             { opacity: 0, y: 8 },
             { opacity: 1, y: 0, duration: 0.28, stagger: 0.03, ease: 'power2.out' }
           );
@@ -264,7 +264,8 @@ function initNavigation() {
       }
 
       // Update Breadcrumb & Header Capsule
-      const secText = item.querySelector('span').textContent;
+      const labelEl = item.querySelector('.nav-tab-text') || item.querySelector('span');
+      const secText = labelEl ? labelEl.textContent : item.textContent.trim();
       const bcSec = document.getElementById('bcCurrentSection');
       const headerSep = document.getElementById('headerContextSep');
       if (bcSec) {
@@ -396,13 +397,13 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     // GSAP Intro animation
     if (window.gsap) {
       gsap.from('#sidebarDocCard', { opacity: 0, x: -16, duration: 0.35, ease: 'power2.out' });
-      gsap.from('.metric-row', { opacity: 0, x: -8, stagger: 0.04, duration: 0.25, ease: 'power1.out' });
-      gsap.from('.form-section.active .input-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.35, ease: 'power2.out' });
+      gsap.from('.stat-row', { opacity: 0, x: -8, stagger: 0.04, duration: 0.25, ease: 'power1.out' });
+      gsap.from('.form-section.active .bento-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.35, ease: 'power2.out' });
     }
 
     document.getElementById('headerContextSep').style.display = 'inline';
     document.getElementById('bcCurrentSection').style.display = 'inline';
-    document.getElementById('headerStatusDot').className = 'status-indicator-dot synced';
+    document.getElementById('headerStatusDot').className = 'status-dot synced';
 
     setStatus(true, 'Dokument pripravený');
     showToastNotice(`Dokument '${fileName}' bol úspešne načítaný.`);
@@ -518,7 +519,7 @@ function updateDocumentMetadataHeader() {
 
   const badge = document.getElementById('sideTypeBadge');
   const typeLabel = document.getElementById('sideTypeLabel');
-  badge.className = 'doc-type-icon';
+  badge.className = 'doc-format-box';
 
   if (currentFileInfo.type === 'word') {
     badge.classList.add('type-word');
@@ -1331,13 +1332,13 @@ function setStatus(isClean, text) {
   const headerDot = document.getElementById('headerStatusDot');
 
   if (isClean) {
-    if (bullet) bullet.className = 'status-bullet';
+    if (bullet) bullet.className = 'status-dot synced';
     if (txt) txt.textContent = text || 'Pripravené';
-    if (headerDot) headerDot.className = 'status-indicator-dot synced';
+    if (headerDot) headerDot.className = 'status-dot synced';
   } else {
-    if (bullet) bullet.className = 'status-bullet unsaved';
+    if (bullet) bullet.className = 'status-dot dirty';
     if (txt) txt.textContent = text || 'Máte neuložené zmeny';
-    if (headerDot) headerDot.className = 'status-indicator-dot dirty';
+    if (headerDot) headerDot.className = 'status-dot dirty';
   }
 }
 
