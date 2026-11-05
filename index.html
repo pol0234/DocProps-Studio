@@ -12,24 +12,62 @@
 
   <div class="app-shell">
     
-    <!-- Custom Window Drag Titlebar -->
+    <!-- Unified Window Drag Titlebar (Craft Studio Header) -->
     <header class="window-titlebar">
-      <div class="window-brand">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-        </svg>
-        <span>DocProps Studio</span>
-        <span class="window-subtitle">OpenXML Inspector &amp; Metadata Engine</span>
+      <!-- Left: Brand Identity -->
+      <div class="header-left">
+        <div class="window-brand">
+          <div class="brand-gem">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </div>
+          <span class="brand-title">DocProps</span>
+          <span class="brand-badge">STUDIO</span>
+        </div>
       </div>
 
-      <div class="window-actions">
+      <!-- Center: Dynamic Document & Section Context Capsule -->
+      <div class="header-center">
+        <div class="context-capsule" id="headerContextCapsule">
+          <span id="headerStatusDot" class="status-indicator-dot idle"></span>
+          <span id="bcDocTypePill" class="doc-type-pill" style="display: none;">WORD</span>
+          <span id="bcDocName" class="context-docname">Žiadny súbor nie je otvorený</span>
+          <span class="context-separator" id="headerContextSep" style="display: none;">›</span>
+          <span id="bcCurrentSection" class="context-section" style="display: none;">Identita &amp; Autorstvo</span>
+        </div>
+      </div>
+
+      <!-- Right: Action Controls (Preserves 140px safe zone for Windows native window buttons) -->
+      <div class="header-right">
+        <!-- Persistent Actions -->
         <button id="btnLoadSample" class="btn btn-ghost btn-sm" title="Otvoriť ukážkový dokument">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path></svg>
-          Načítať vzorku
+          <span>Ukážka</span>
         </button>
+
+        <!-- Document-Active Actions -->
+        <div class="toolbar-controls" id="toolbarControls" style="display: none;">
+          <button id="btnToggleDiff" class="btn btn-secondary btn-sm" title="Zobraziť porovnanie zmien">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            <span>Zmeny</span>
+            <span id="diffCounter" class="diff-count-badge">0</span>
+          </button>
+          
+          <button id="btnOpenFileSecondary" class="btn btn-secondary btn-sm" title="Otvoriť iný súbor">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>Iný súbor</span>
+          </button>
+
+          <button id="btnExportPrimary" class="btn btn-primary btn-shiny btn-sm" title="Uložiť zmeny do nového súboru (Ctrl+S)">
+            <span class="shiny-shimmer"></span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <span>Uložiť &amp; Exportovať</span>
+          </button>
+        </div>
 
         <button id="btnThemeToggle" class="btn btn-icon btn-ghost" title="Prepnúť motív (Svetlý / Tmavý)">
           <svg id="themeSvg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -141,33 +179,6 @@
 
       <!-- Main Studio Container -->
       <main class="studio-main">
-        
-        <!-- Studio Toolbar -->
-        <div class="studio-toolbar">
-          <div class="breadcrumb-path">
-            <span id="bcDocName">Súbor nebol načítaný</span>
-            <span class="separator">/</span>
-            <span id="bcCurrentSection" class="current">Identita &amp; Autorstvo</span>
-            <span id="bcDocTypePill" class="doc-type-pill" style="display: none;">WORD</span>
-          </div>
-
-          <div class="toolbar-controls" id="toolbarControls" style="display: none;">
-            <button id="btnToggleDiff" class="btn btn-secondary btn-sm" title="Zobraziť porovnanie zmien">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-              Zmeny (<span id="diffCounter">0</span>)
-            </button>
-            <button id="btnOpenFileSecondary" class="btn btn-secondary btn-sm">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              Iný súbor
-            </button>
-            <button id="btnExportPrimary" class="btn btn-primary btn-shiny btn-sm">
-              <span class="shiny-shimmer"></span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-              <span>Uložiť &amp; Exportovať</span>
-            </button>
-          </div>
-        </div>
-
         <!-- Studio Content -->
         <div class="studio-content">
           

@@ -263,8 +263,15 @@ function initNavigation() {
         }
       }
 
-      // Update Breadcrumb
-      document.getElementById('bcCurrentSection').textContent = item.querySelector('span').textContent;
+      // Update Breadcrumb & Header Capsule
+      const secText = item.querySelector('span').textContent;
+      const bcSec = document.getElementById('bcCurrentSection');
+      const headerSep = document.getElementById('headerContextSep');
+      if (bcSec) {
+        bcSec.textContent = secText;
+        bcSec.style.display = 'inline';
+      }
+      if (headerSep) headerSep.style.display = 'inline';
 
       if (secId === 'secXml') {
         syncFormToXmlDocs();
@@ -392,6 +399,10 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
       gsap.from('.metric-row', { opacity: 0, x: -8, stagger: 0.04, duration: 0.25, ease: 'power1.out' });
       gsap.from('.form-section.active .input-card', { opacity: 0, y: 12, stagger: 0.03, duration: 0.35, ease: 'power2.out' });
     }
+
+    document.getElementById('headerContextSep').style.display = 'inline';
+    document.getElementById('bcCurrentSection').style.display = 'inline';
+    document.getElementById('headerStatusDot').className = 'status-indicator-dot synced';
 
     setStatus(true, 'Dokument pripravený');
     showToastNotice(`Dokument '${fileName}' bol úspešne načítaný.`);
@@ -1317,12 +1328,16 @@ function initKeyboardShortcuts() {
 function setStatus(isClean, text) {
   const bullet = document.getElementById('statusBullet');
   const txt = document.getElementById('statusText');
+  const headerDot = document.getElementById('headerStatusDot');
+
   if (isClean) {
-    bullet.className = 'status-bullet';
-    txt.textContent = text || 'Pripravené';
+    if (bullet) bullet.className = 'status-bullet';
+    if (txt) txt.textContent = text || 'Pripravené';
+    if (headerDot) headerDot.className = 'status-indicator-dot synced';
   } else {
-    bullet.className = 'status-bullet unsaved';
-    txt.textContent = text || 'Máte neuložené zmeny';
+    if (bullet) bullet.className = 'status-bullet unsaved';
+    if (txt) txt.textContent = text || 'Máte neuložené zmeny';
+    if (headerDot) headerDot.className = 'status-indicator-dot dirty';
   }
 }
 
