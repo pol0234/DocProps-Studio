@@ -1,7 +1,29 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const JSZip = require('jszip');
+
+async function createTempOfficeFile(type, fileName) {
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>');
+  zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
+  <dc:title>Testovaci ${type.toUpperCase()}</dc:title>
+  <dc:creator>Testovaci Autor</dc:creator>
+</cp:coreProperties>`);
+  zip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
+  <TotalTime>45</TotalTime>
+  <Application>Microsoft ${type === 'xlsx' ? 'Excel' : 'PowerPoint'}</Application>
+  <Company>Testovacia Firma</Company>
+</Properties>`);
+
+  const buf = await zip.generateAsync({ type: 'nodebuffer' });
+  const tmpPath = path.join(os.tmpdir(), fileName);
+  fs.writeFileSync(tmpPath, buf);
+  return tmpPath;
+}
 
 (async () => {
   console.log('=== SPUSTENIE E2E OVERENIA S CHROMIUM ===');
@@ -136,12 +158,12 @@ const JSZip = require('jszip');
     throw new Error('Metadáta v ukladacom archíve neboli správne zapísané!');
   }
 
-  // 9. DYNAMICKÝ BRANDING & FORMÁTOVÁ ADAPTÁCIA (Word -> Excel -> PowerPoint)
-  console.log('\n9. Test dynamického brandingu pre XLSX a PPTX...');
+  // 9. DYNAMICKÝ BRANDING & FAREBNÁ ADAPTÁCIA (Word = Modrá, Excel = Zelená, PowerPoint = Červená)
+  console.log('\n9. Test dynamického brandingu a farebnej témy pre XLSX a PPTX...');
 
   // Test XLSX
-  const xlsxPath = path.resolve('samples/vzorka_rozpocet.xlsx');
-  console.log('   Nahrávam Excel súbor:', xlsxPath);
+  const xlsxPath = await createTempOfficeFile('xlsx', 'test_rozpocet.xlsx');
+  console.log('   Nahrávam dočasný Excel súbor:', xlsxPath);
   const fileInput = await page.$('#systemFileInput');
   await fileInput.setInputFiles(xlsxPath);
   await page.waitForTimeout(500);
@@ -150,19 +172,30 @@ const JSZip = require('jszip');
   const brandTagExcel = await page.textContent('#brandTag');
   const badgeClassesExcel = await page.getAttribute('#brandBadgeBox', 'class');
   const iconExcelDisplay = await page.evaluate(() => window.getComputedStyle(document.getElementById('brandIconExcel')).display);
+  const docTypeExcel = await page.evaluate(() => document.documentElement.getAttribute('data-doc-type'));
+  const themeAccentExcel = await page.evaluate(() => window.getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim());
 
   console.log(`   Excel Brand Name: "${brandNameExcel}" (očakáva sa "ExcelProps")`);
   console.log(`   Excel Brand Tag: "${brandTagExcel}" (očakáva sa "XLSX")`);
   console.log(`   Excel Badge Classes: "${badgeClassesExcel}"`);
   console.log(`   Excel Icon Display: "${iconExcelDisplay}"`);
+  console.log(`   Excel data-doc-type: "${docTypeExcel}" (očakáva sa "xlsx")`);
+  console.log(`   Excel --theme-accent: "${themeAccentExcel}" (očakáva sa zelená #10b981)`);
 
-  if (brandNameExcel !== 'ExcelProps' || brandTagExcel !== 'XLSX' || !badgeClassesExcel.includes('excel-theme') || iconExcelDisplay === 'none') {
-    throw new Error('Dynamický branding pre Excel (ExcelProps) zlyhal!');
+  if (
+    brandNameExcel !== 'ExcelProps' ||
+    brandTagExcel !== 'XLSX' ||
+    !badgeClassesExcel.includes('excel-theme') ||
+    iconExcelDisplay === 'none' ||
+    docTypeExcel !== 'xlsx' ||
+    themeAccentExcel !== '#10b981'
+  ) {
+    throw new Error('Dynamický branding a farebná téma pre Excel (zelená) zlyhali!');
   }
 
   // Test PPTX
-  const pptxPath = path.resolve('samples/vzorka_prezentacia.pptx');
-  console.log('   Nahrávam PowerPoint súbor:', pptxPath);
+  const pptxPath = await createTempOfficeFile('pptx', 'test_prezentacia.pptx');
+  console.log('   Nahrávam dočasný PowerPoint súbor:', pptxPath);
   await fileInput.setInputFiles(pptxPath);
   await page.waitForTimeout(500);
 
@@ -170,14 +203,34 @@ const JSZip = require('jszip');
   const brandTagPpt = await page.textContent('#brandTag');
   const badgeClassesPpt = await page.getAttribute('#brandBadgeBox', 'class');
   const iconPptDisplay = await page.evaluate(() => window.getComputedStyle(document.getElementById('brandIconPpt')).display);
+  const docTypePpt = await page.evaluate(() => document.documentElement.getAttribute('data-doc-type'));
+  const themeAccentPpt = await page.evaluate(() => window.getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim());
 
   console.log(`   PPTX Brand Name: "${brandNamePpt}" (očakáva sa "SlideProps")`);
   console.log(`   PPTX Brand Tag: "${brandTagPpt}" (očakáva sa "PPTX")`);
   console.log(`   PPTX Badge Classes: "${badgeClassesPpt}"`);
   console.log(`   PPTX Icon Display: "${iconPptDisplay}"`);
+  console.log(`   PPTX data-doc-type: "${docTypePpt}" (očakáva sa "pptx")`);
+  console.log(`   PPTX --theme-accent: "${themeAccentPpt}" (očakáva sa červená #ef4444)`);
 
-  if (brandNamePpt !== 'SlideProps' || brandTagPpt !== 'PPTX' || !badgeClassesPpt.includes('pptx-theme') || iconPptDisplay === 'none') {
-    throw new Error('Dynamický branding pre PowerPoint (SlideProps) zlyhal!');
+  if (
+    brandNamePpt !== 'SlideProps' ||
+    brandTagPpt !== 'PPTX' ||
+    !badgeClassesPpt.includes('pptx-theme') ||
+    iconPptDisplay === 'none' ||
+    docTypePpt !== 'pptx' ||
+    themeAccentPpt !== '#ef4444'
+  ) {
+    throw new Error('Dynamický branding a farebná téma pre PowerPoint (červená) zlyhali!');
+  }
+
+  // Upratanie dočasných súborov po teste
+  try {
+    if (fs.existsSync(xlsxPath)) fs.unlinkSync(xlsxPath);
+    if (fs.existsSync(pptxPath)) fs.unlinkSync(pptxPath);
+    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+  } catch (cleanErr) {
+    console.warn('Upozornenie pri mazaní testovacích súborov:', cleanErr.message);
   }
 
   // 10. TEST RESPONSIVITY TOP BARU (Kompaktné okno a viditeľnosť tlačidla Uložiť)

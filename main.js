@@ -4,9 +4,6 @@ const fs = require('fs');
 
 let mainWindow;
 
-// Force dark mode globally in Electron to guarantee dark system scrollbars
-nativeTheme.themeSource = 'dark';
-
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1240,
@@ -151,7 +148,12 @@ ipcMain.handle('file:saveDirect', async (event, payload) => {
   }
 });
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  if (nativeTheme) {
+    nativeTheme.themeSource = 'dark';
+  }
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

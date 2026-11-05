@@ -434,6 +434,9 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
 // Document Context Adaptation
 // -----------------------------------------------------------------------------
 function applyDocumentTypeContext(type) {
+  // Set global document format theme attribute (Word = blue, Excel = green, PowerPoint = red)
+  document.documentElement.setAttribute('data-doc-type', type);
+
   const wordFields = document.querySelectorAll('.doc-field-word');
   const pptxFields = document.querySelectorAll('.doc-field-pptx');
   const wordActions = document.querySelectorAll('.doc-action-word-only');
@@ -1556,7 +1559,7 @@ async function loadSampleDiplomovka() {
   const blob = await sampleZip.generateAsync({ type: 'blob' });
   const buf = await blob.arrayBuffer();
 
-  loadFromBinaryBuffer(buf, 'Vzorova_diplomovka.docx', buf.byteLength, 'samples/vzorka_diplomovka.docx');
+  loadFromBinaryBuffer(buf, 'Vzorova_diplomovka.docx', buf.byteLength, 'Vzorova_diplomovka.docx');
 }
 
 // -----------------------------------------------------------------------------

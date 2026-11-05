@@ -37,10 +37,18 @@
   --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-elevated: 0 16px 40px rgba(0, 0, 0, 0.55);
 
-  /* Format Theme Accents */
+    /* Format Theme Accents */
   --brand-word: #3b82f6;
   --brand-excel: #10b981;
-  --brand-pptx: #f97316;
+  --brand-pptx: #ef4444;
+
+  /* Dynamic Theme Accents (Default: Word Blue) */
+  --theme-accent: #3b82f6;
+  --theme-accent-hover: #60a5fa;
+  --theme-accent-gradient: linear-gradient(135deg, #2563eb, #1d4ed8);
+  --theme-accent-glow: rgba(37, 99, 235, 0.35);
+  --theme-accent-surface: rgba(59, 130, 246, 0.12);
+  --theme-accent-border: rgba(59, 130, 246, 0.35);
 
   --radius-xs: 5px;
   --radius-sm: 8px;
@@ -82,6 +90,65 @@
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.05);
   --shadow-elevated: 0 12px 36px rgba(0, 0, 0, 0.09);
 }
+
+/* --------------------------------------------------------------------------
+   DYNAMIC DOCUMENT FORMAT THEMES (Word = Blue, Excel = Green, PowerPoint = Red)
+   -------------------------------------------------------------------------- */
+[data-doc-type="xlsx"] {
+  --text-accent: #10b981;
+  --theme-accent: #10b981;
+  --theme-accent-hover: #34d399;
+  --theme-accent-gradient: linear-gradient(135deg, #10b981, #059669);
+  --theme-accent-glow: rgba(16, 185, 129, 0.4);
+  --theme-accent-surface: rgba(16, 185, 129, 0.12);
+  --theme-accent-border: rgba(16, 185, 129, 0.35);
+  --border-focus: #10b981;
+}
+
+[data-doc-type="pptx"] {
+  --text-accent: #ef4444;
+  --theme-accent: #ef4444;
+  --theme-accent-hover: #f87171;
+  --theme-accent-gradient: linear-gradient(135deg, #ef4444, #dc2626);
+  --theme-accent-glow: rgba(239, 68, 68, 0.4);
+  --theme-accent-surface: rgba(239, 68, 68, 0.12);
+  --theme-accent-border: rgba(239, 68, 68, 0.35);
+  --border-focus: #ef4444;
+}
+
+[data-doc-type="word"] {
+  --text-accent: #3b82f6;
+  --theme-accent: #3b82f6;
+  --theme-accent-hover: #60a5fa;
+  --theme-accent-gradient: linear-gradient(135deg, #2563eb, #1d4ed8);
+  --theme-accent-glow: rgba(37, 99, 235, 0.35);
+  --theme-accent-surface: rgba(59, 130, 246, 0.12);
+  --theme-accent-border: rgba(59, 130, 246, 0.35);
+  --border-focus: #3b82f6;
+}
+
+[data-theme="light"][data-doc-type="xlsx"] {
+  --text-accent: #059669;
+  --theme-accent: #059669;
+  --theme-accent-hover: #047857;
+  --theme-accent-gradient: linear-gradient(135deg, #059669, #047857);
+  --theme-accent-glow: rgba(5, 150, 105, 0.25);
+  --theme-accent-surface: rgba(5, 150, 105, 0.1);
+  --theme-accent-border: rgba(5, 150, 105, 0.3);
+  --border-focus: #059669;
+}
+
+[data-theme="light"][data-doc-type="pptx"] {
+  --text-accent: #dc2626;
+  --theme-accent: #dc2626;
+  --theme-accent-hover: #b91c1c;
+  --theme-accent-gradient: linear-gradient(135deg, #dc2626, #b91c1c);
+  --theme-accent-glow: rgba(220, 38, 38, 0.25);
+  --theme-accent-surface: rgba(220, 38, 38, 0.1);
+  --theme-accent-border: rgba(220, 38, 38, 0.3);
+  --border-focus: #dc2626;
+}
+
 
 /* --------------------------------------------------------------------------
    BASE RESETS & RESPONSIVE SCROLLBAR
@@ -199,10 +266,10 @@ html, body {
 }
 
 .brand-badge-box.pptx-theme {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.25) 0%, rgba(124, 45, 18, 0.7) 100%);
-  border-color: rgba(251, 146, 60, 0.45);
-  color: #fb923c;
-  box-shadow: 0 0 16px rgba(249, 115, 22, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(153, 27, 27, 0.7) 100%);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #f87171;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.25);
 }
 
 .brand-text {
@@ -247,10 +314,10 @@ html, body {
 }
 
 .brand-name.pptx-theme .brand-suffix {
-  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 10px rgba(249, 115, 22, 0.5));
+  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.5));
 }
 
 [data-theme="light"] .brand-suffix {
@@ -267,9 +334,10 @@ html, body {
 }
 
 [data-theme="light"] .brand-name.pptx-theme .brand-suffix {
-  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.5));
 }
 
 .brand-tag {
@@ -294,9 +362,9 @@ html, body {
 }
 
 .brand-tag.pptx-theme {
-  background: rgba(249, 115, 22, 0.15);
-  border-color: rgba(249, 115, 22, 0.35);
-  color: #fb923c;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
 }
 
 /* Document File Status Hub Capsule */
@@ -336,7 +404,7 @@ html, body {
 }
 
 .type-pill.word { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
-.type-pill.pptx { background: linear-gradient(135deg, #ea580c, #c2410c); }
+.type-pill.pptx { background: linear-gradient(135deg, #ef4444, #dc2626); }
 .type-pill.xlsx { background: linear-gradient(135deg, #10b981, #059669); }
 .type-pill.generic { background: #64748b; }
 
@@ -493,8 +561,8 @@ html, body {
   background: var(--bg-card);
   color: var(--text-primary);
   font-weight: 600;
-  border-color: var(--border-strong);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  border-color: var(--theme-accent-border);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15), 0 0 12px var(--theme-accent-surface);
 }
 
 .nav-tab-btn.active svg {
@@ -542,15 +610,15 @@ html, body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: var(--theme-accent-gradient);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 8px var(--theme-accent-glow);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.45);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px var(--theme-accent-glow);
 }
 
 .btn-secondary {
@@ -745,7 +813,7 @@ html, body {
   margin-right: 6px;
 }
 .pill-dot.word { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; }
-.pill-dot.pptx { background: #f97316; box-shadow: 0 0 6px #f97316; }
+.pill-dot.pptx { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
 .pill-dot.xlsx { background: #10b981; box-shadow: 0 0 6px #10b981; }
 
 .dropzone-actions-wrap {
@@ -882,8 +950,8 @@ html, body {
 }
 
 .preset-pill:hover {
-  background: var(--hover-overlay);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--theme-accent-surface);
+  border-color: var(--theme-accent-border);
   color: var(--text-primary);
   transform: translateY(-1px);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
@@ -979,6 +1047,14 @@ html, body {
   border-radius: 4px;
   background: var(--bg-pill);
   border: 1px solid var(--border-subtle);
+  transition: all var(--transition-smooth);
+}
+
+.spotlight-card:hover .field-badge,
+.craft-field:focus-within .field-badge {
+  color: var(--text-accent);
+  border-color: var(--theme-accent-border);
+  background: var(--theme-accent-surface);
 }
 
 /* Inputs */
@@ -996,9 +1072,10 @@ html, body {
 }
 
 .craft-input:focus {
-  background: var(--bg-input-focus);
+  outline: none;
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+  background: var(--bg-input-focus);
+  box-shadow: 0 0 0 3px var(--theme-accent-surface);
 }
 
 .mono-font {
@@ -1041,8 +1118,8 @@ html, body {
 
 /* Timing Hero Card */
 .timing-hero-card {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, var(--bg-card) 100%);
-  border-color: rgba(59, 130, 246, 0.25);
+  background: linear-gradient(135deg, var(--theme-accent-surface) 0%, var(--bg-card) 100%);
+  border-color: var(--theme-accent-border);
 }
 
 .timing-hero-flex {
@@ -1061,10 +1138,11 @@ html, body {
   font-size: 38px;
   font-weight: 800;
   font-family: var(--font-mono);
-  color: #60a5fa;
+  color: var(--theme-accent);
   letter-spacing: -0.03em;
   line-height: 1.1;
   margin: 4px 0;
+  text-shadow: 0 0 20px var(--theme-accent-glow);
 }
 
 .timing-human-sub {
@@ -1445,6 +1523,23 @@ html, body {
 .spotlight-card:hover::before {
   opacity: 1;
 }
+
+[data-doc-type="xlsx"] .spotlight-card::before {
+  background: radial-gradient(
+    380px circle at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    rgba(16, 185, 129, 0.2),
+    transparent 55%
+  );
+}
+
+[data-doc-type="pptx"] .spotlight-card::before {
+  background: radial-gradient(
+    380px circle at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    rgba(239, 68, 68, 0.2),
+    transparent 55%
+  );
+}
+
 
 /* --------------------------------------------------------------------------
    RESPONSIVE MEDIA QUERIES (Fluid Adaptive Architecture)
