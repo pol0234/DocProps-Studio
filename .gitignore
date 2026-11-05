@@ -12,6 +12,11 @@ Desktop.ini
 $RECYCLE.BIN/
 .DS_Store
 
+# Build outputs
+dist/
+build/
+
 # Temporary outputs
 temp_test/
 *.tmp
+

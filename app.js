@@ -1,20 +1,26 @@
 /**
- * DocProps Studio - Application Logic
- * Supports DOCX, PPTX, XLSX and other OpenXML formats.
+ * DocProps Studio - Desktop Application Engine
+ * Native Electron + Web fallback engine
  */
 
 // Global State
-let currentFile = null;
 let currentZip = null;
-let originalSnapshot = null;
-let activeRawFile = 'docProps/core.xml';
+let currentFileInfo = {
+  name: '',
+  size: 0,
+  path: ''
+};
+
+let activeSectionId = 'secIdentity';
+let activeXmlPart = 'docProps/core.xml';
+
 let xmlDocs = {
   core: null,
   app: null,
   custom: null
 };
 
-// OpenXML Namespaces
+// Namespaces
 const NS = {
   cp: 'http://schemas.openxmlformats.org/package/2006/metadata/core-properties',
   dc: 'http://purl.org/dc/elements/1.1/',
@@ -24,35 +30,41 @@ const NS = {
   vt: 'http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes'
 };
 
-// DOM Elements
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const dropzoneSection = document.getElementById('dropzoneSection');
-const editorSection = document.getElementById('editorSection');
-const saveBar = document.getElementById('saveBar');
-const rawXmlEditor = document.getElementById('rawXmlEditor');
-const toastEl = document.getElementById('toast');
-const toastMessageEl = document.getElementById('toastMessage');
-
-// Initialize
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  initTabs();
+  initNavigation();
   initDragAndDrop();
   initEvents();
+  initKeyboardShortcuts();
+  initElectronBridge();
 });
+
+// -----------------------------------------------------------------------------
+// Electron IPC Integration
+// -----------------------------------------------------------------------------
+function initElectronBridge() {
+  if (window.electronAPI) {
+    window.electronAPI.onOpenFileFromSystem(async (filePath) => {
+      const fileData = await window.electronAPI.readFromPath(filePath);
+      if (fileData) {
+        loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+      }
+    });
+  }
+}
 
 // -----------------------------------------------------------------------------
 // Theme Management
 // -----------------------------------------------------------------------------
 function initTheme() {
-  const savedTheme = localStorage.getItem('docprops-theme') || 'light';
+  const savedTheme = localStorage.getItem('docprops-theme') || 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeIcon(savedTheme);
 
-  document.getElementById('btnToggleTheme').addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
+  document.getElementById('btnThemeToggle').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('docprops-theme', next);
     updateThemeIcon(next);
@@ -60,16 +72,14 @@ function initTheme() {
 }
 
 function updateThemeIcon(theme) {
-  const icon = document.getElementById('themeIcon');
+  const svg = document.getElementById('themeSvg');
   if (theme === 'dark') {
-    // Moon icon
-    icon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
+    svg.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`;
   } else {
-    // Sun icon
-    icon.innerHTML = `
+    svg.innerHTML = `
       <circle cx="12" cy="12" r="5"></circle>
       <line x1="12" y1="1" x2="12" y2="3"></line>
-      <line x1="12" y1="12" x2="12" y2="23"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
       <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
       <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
       <line x1="1" y1="12" x2="3" y2="12"></line>
@@ -81,33 +91,50 @@ function updateThemeIcon(theme) {
 }
 
 // -----------------------------------------------------------------------------
-// Tabs Navigation
+// Navigation Between Sections
 // -----------------------------------------------------------------------------
-function initTabs() {
-  const tabButtons = document.querySelectorAll('.tab-btn');
-  tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabButtons.forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+function initNavigation() {
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      navItems.forEach(n => n.classList.remove('active'));
+      item.classList.add('active');
 
-      btn.classList.add('active');
-      const targetId = btn.getAttribute('data-tab');
-      const targetContent = document.getElementById(targetId);
-      if (targetContent) targetContent.classList.add('active');
+      const secId = item.getAttribute('data-section');
+      activeSectionId = secId;
 
-      if (targetId === 'tabRawXml') {
+      document.querySelectorAll('.form-section').forEach(sec => sec.classList.remove('active'));
+      const targetSec = document.getElementById(secId);
+      if (targetSec) targetSec.classList.add('active');
+
+      // Update Breadcrumb
+      document.getElementById('bcCurrentSection').textContent = item.querySelector('span').textContent;
+
+      if (secId === 'secXml') {
         syncFormToXmlDocs();
-        loadRawXmlIntoEditor(activeRawFile);
+        loadRawXmlIntoEditor(activeXmlPart);
       }
     });
   });
 }
 
 // -----------------------------------------------------------------------------
-// Drag & Drop
+// File Ingestion & Drag / Drop
 // -----------------------------------------------------------------------------
 function initDragAndDrop() {
-  dropzone.addEventListener('click', () => fileInput.click());
+  const dropzoneBox = document.getElementById('dropzoneBox');
+  const fileInput = document.getElementById('systemFileInput');
+
+  dropzoneBox.addEventListener('click', async () => {
+    if (window.electronAPI) {
+      const fileData = await window.electronAPI.openFileDialog();
+      if (fileData) {
+        loadFromBinaryBuffer(fileData.buffer, fileData.fileName, fileData.fileSize, fileData.filePath);
+      }
+    } else {
+      fileInput.click();
+    }
+  });
 
   fileInput.addEventListener('change', (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -115,217 +142,604 @@ function initDragAndDrop() {
     }
   });
 
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropzone.addEventListener(eventName, (e) => {
+  ['dragenter', 'dragover'].forEach(ev => {
+    window.addEventListener(ev, (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      dropzone.classList.add('dragover');
-    }, false);
+      dropzoneBox.classList.add('dragover');
+    });
   });
 
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropzone.addEventListener(eventName, (e) => {
+  ['dragleave', 'drop'].forEach(ev => {
+    window.addEventListener(ev, (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      dropzone.classList.remove('dragover');
-    }, false);
+      dropzoneBox.classList.remove('dragover');
+    });
   });
 
-  dropzone.addEventListener('drop', (e) => {
-    const dt = e.dataTransfer;
-    if (dt.files && dt.files[0]) {
-      loadFile(dt.files[0]);
-    }
-  });
-
-  // Global window drag & drop
-  window.addEventListener('dragover', (e) => e.preventDefault());
   window.addEventListener('drop', (e) => {
     e.preventDefault();
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
       loadFile(e.dataTransfer.files[0]);
     }
   });
 }
 
-// -----------------------------------------------------------------------------
-// File Processing (JSZip)
-// -----------------------------------------------------------------------------
 async function loadFile(file) {
   try {
-    currentFile = file;
     const arrayBuffer = await file.arrayBuffer();
-    currentZip = await JSZip.loadAsync(arrayBuffer);
-
-    // Update File Card UI
-    updateFileHeader(file.name, file.size);
-
-    // Parse XML files
-    await parseArchiveMetadata();
-
-    // Show Workspace
-    dropzoneSection.style.display = 'none';
-    editorSection.style.display = 'block';
-    saveBar.style.display = 'flex';
-
-    saveOriginalSnapshot();
-    showToast(`Dokument '${file.name}' bol úspešne načítaný!`);
+    loadFromBinaryBuffer(arrayBuffer, file.name, file.size, file.path || file.name);
   } catch (err) {
     console.error(err);
-    alert('Nepodarilo sa načítať súbor ako OpenXML ZIP archív. Uistite sa, že ide o platný súbor DOCX, PPTX alebo XLSX.');
+    alert('Nepodarilo sa načítať súbor: ' + err.message);
   }
 }
 
-function updateFileHeader(name, size) {
-  document.getElementById('fileName').textContent = name;
-  document.getElementById('fileSize').textContent = formatBytes(size);
+async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
+  try {
+    currentFileInfo = {
+      name: fileName,
+      size: fileSize,
+      path: filePath
+    };
 
+    currentZip = await JSZip.loadAsync(buffer);
+    await parseArchiveMetadata();
+
+    // Show Workspace, Hide Empty Dropzone
+    document.getElementById('viewEmptyState').style.display = 'none';
+    document.getElementById('viewFormSections').style.display = 'block';
+    document.getElementById('sidebarDocCard').style.display = 'flex';
+    document.getElementById('sidebarActions').style.display = 'flex';
+    document.getElementById('toolbarControls').style.display = 'flex';
+
+    // Update UI headers
+    updateDocumentMetadataHeader();
+    setStatus(true, 'Dokument načítaný');
+    showToastNotice(`Dokument '${fileName}' bol úspešne otvorený.`);
+  } catch (err) {
+    console.error(err);
+    alert('Neplatný formát OpenXML archívu. Uistite sa, že súbor nie je poškodený.');
+  }
+}
+
+function updateDocumentMetadataHeader() {
+  const name = currentFileInfo.name;
+  const size = currentFileInfo.size;
   const ext = name.split('.').pop().toLowerCase();
-  const badge = document.getElementById('fileTypeBadge');
-  const formatName = document.getElementById('fileFormatName');
 
-  badge.className = 'file-type-badge';
+  document.getElementById('sideFileName').textContent = name;
+  document.getElementById('sideFileName').title = currentFileInfo.path || name;
+  document.getElementById('sideFileSize').textContent = `${formatBytes(size)} • OOXML`;
+  document.getElementById('statusSize').textContent = formatBytes(size);
+  document.getElementById('bcDocName').textContent = name;
+
+  const badge = document.getElementById('sideTypeBadge');
+  badge.className = 'doc-type-icon';
 
   if (['docx', 'docm', 'dotx', 'dotm'].includes(ext)) {
     badge.classList.add('type-word');
     badge.textContent = 'DOC';
-    formatName.textContent = 'Microsoft Word Dokument';
+    document.getElementById('packageFormat').textContent = 'WordprocessingML (DOCX)';
   } else if (['pptx', 'pptm', 'potx', 'potm'].includes(ext)) {
-    badge.classList.add('type-powerpoint');
+    badge.classList.add('type-pptx');
     badge.textContent = 'PPT';
-    formatName.textContent = 'Microsoft PowerPoint Prezentácia';
+    document.getElementById('packageFormat').textContent = 'PresentationML (PPTX)';
   } else if (['xlsx', 'xlsm', 'xltx', 'xltm'].includes(ext)) {
-    badge.classList.add('type-excel');
+    badge.classList.add('type-xlsx');
     badge.textContent = 'XLS';
-    formatName.textContent = 'Microsoft Excel Tabuľka';
+    document.getElementById('packageFormat').textContent = 'SpreadsheetML (XLSX)';
   } else {
-    badge.classList.add('type-other');
+    badge.classList.add('type-generic');
     badge.textContent = ext.toUpperCase().substring(0, 3);
-    formatName.textContent = 'OpenXML Archív';
   }
 }
 
+// -----------------------------------------------------------------------------
+// XML Parsing & Form Population
+// -----------------------------------------------------------------------------
 async function parseArchiveMetadata() {
   const parser = new DOMParser();
 
-  // 1. core.xml
+  // Core Properties
   const coreFile = currentZip.file('docProps/core.xml');
   if (coreFile) {
     const text = await coreFile.async('text');
     xmlDocs.core = parser.parseFromString(text, 'application/xml');
   } else {
-    xmlDocs.core = parser.parseFromString(createDefaultCoreXml(), 'application/xml');
+    xmlDocs.core = parser.parseFromString(createBlankCoreXml(), 'application/xml');
   }
 
-  // 2. app.xml
+  // App Properties
   const appFile = currentZip.file('docProps/app.xml');
   if (appFile) {
     const text = await appFile.async('text');
     xmlDocs.app = parser.parseFromString(text, 'application/xml');
   } else {
-    xmlDocs.app = parser.parseFromString(createDefaultAppXml(), 'application/xml');
+    xmlDocs.app = parser.parseFromString(createBlankAppXml(), 'application/xml');
   }
 
-  // 3. custom.xml
+  // Custom Properties
   const customFile = currentZip.file('docProps/custom.xml');
   if (customFile) {
     const text = await customFile.async('text');
     xmlDocs.custom = parser.parseFromString(text, 'application/xml');
   } else {
-    xmlDocs.custom = parser.parseFromString(createDefaultCustomXml(), 'application/xml');
+    xmlDocs.custom = parser.parseFromString(createBlankCustomXml(), 'application/xml');
   }
 
-  populateFormFromXml();
+  populateForm();
 }
 
-function populateFormFromXml() {
+function populateForm() {
   // Core
-  setInputValue('coreCreator', getTagValue(xmlDocs.core, 'creator'));
-  setInputValue('coreLastModifiedBy', getTagValue(xmlDocs.core, 'lastModifiedBy'));
-  setInputValue('coreTitle', getTagValue(xmlDocs.core, 'title'));
-  setInputValue('coreSubject', getTagValue(xmlDocs.core, 'subject'));
-  setInputValue('coreKeywords', getTagValue(xmlDocs.core, 'keywords'));
-  setInputValue('coreCategory', getTagValue(xmlDocs.core, 'category'));
-  setInputValue('coreContentStatus', getTagValue(xmlDocs.core, 'contentStatus'));
-  setInputValue('coreDescription', getTagValue(xmlDocs.core, 'description'));
-  setInputValue('coreRevision', getTagValue(xmlDocs.core, 'revision'));
+  setVal('fCreator', getTagValue(xmlDocs.core, 'creator'));
+  setVal('fLastModifiedBy', getTagValue(xmlDocs.core, 'lastModifiedBy'));
+  setVal('fTitle', getTagValue(xmlDocs.core, 'title'));
+  setVal('fSubject', getTagValue(xmlDocs.core, 'subject'));
+  setVal('fKeywords', getTagValue(xmlDocs.core, 'keywords'));
+  setVal('fCategory', getTagValue(xmlDocs.core, 'category'));
+  setVal('fContentStatus', getTagValue(xmlDocs.core, 'contentStatus'));
+  setVal('fDescription', getTagValue(xmlDocs.core, 'description'));
+  
+  const rev = getTagValue(xmlDocs.core, 'revision') || '1';
+  setVal('fRevision', rev);
+  document.getElementById('bentoRevision').textContent = `Rev. ${rev}`;
 
   // Dates
-  const createdRaw = getTagValue(xmlDocs.core, 'created');
-  const modifiedRaw = getTagValue(xmlDocs.core, 'modified');
-  setInputValue('coreCreated', isoToDatetimeLocal(createdRaw));
-  setInputValue('coreModified', isoToDatetimeLocal(modifiedRaw));
+  setVal('fCreated', isoToDatetimeLocal(getTagValue(xmlDocs.core, 'created')));
+  setVal('fModified', isoToDatetimeLocal(getTagValue(xmlDocs.core, 'modified')));
 
-  // App
-  const totalTime = getTagValue(xmlDocs.app, 'TotalTime') || '0';
-  setInputValue('appTotalTime', totalTime);
-  updateTotalTimeHuman(totalTime);
+  // App (Total Time)
+  const totalMin = parseInt(getTagValue(xmlDocs.app, 'TotalTime') || '0', 10);
+  setTotalMinutes(totalMin, false);
 
-  setInputValue('appCompany', getTagValue(xmlDocs.app, 'Company'));
-  setInputValue('appManager', getTagValue(xmlDocs.app, 'Manager'));
-  setInputValue('appTemplate', getTagValue(xmlDocs.app, 'Template'));
-  setInputValue('appApplication', getTagValue(xmlDocs.app, 'Application'));
-  setInputValue('appVersion', getTagValue(xmlDocs.app, 'AppVersion'));
+  // App (Structure)
+  const pages = getTagValue(xmlDocs.app, 'Pages') || '0';
+  const words = getTagValue(xmlDocs.app, 'Words') || '0';
+  const slides = getTagValue(xmlDocs.app, 'Slides') || '0';
 
-  setInputValue('appPages', getTagValue(xmlDocs.app, 'Pages'));
-  setInputValue('appWords', getTagValue(xmlDocs.app, 'Words'));
-  setInputValue('appCharacters', getTagValue(xmlDocs.app, 'Characters'));
-  setInputValue('appCharactersWithSpaces', getTagValue(xmlDocs.app, 'CharactersWithSpaces'));
-  setInputValue('appParagraphs', getTagValue(xmlDocs.app, 'Paragraphs'));
-  setInputValue('appLines', getTagValue(xmlDocs.app, 'Lines'));
-  setInputValue('appSlides', getTagValue(xmlDocs.app, 'Slides'));
-  setInputValue('appNotes', getTagValue(xmlDocs.app, 'Notes'));
+  setVal('fCompany', getTagValue(xmlDocs.app, 'Company'));
+  setVal('fManager', getTagValue(xmlDocs.app, 'Manager'));
+  setVal('fTemplate', getTagValue(xmlDocs.app, 'Template'));
+  setVal('fApplication', getTagValue(xmlDocs.app, 'Application'));
+  setVal('fAppVersion', getTagValue(xmlDocs.app, 'AppVersion'));
+
+  setVal('fPages', pages);
+  setVal('fWords', words);
+  setVal('fCharacters', getTagValue(xmlDocs.app, 'Characters'));
+  setVal('fCharactersWithSpaces', getTagValue(xmlDocs.app, 'CharactersWithSpaces'));
+  setVal('fParagraphs', getTagValue(xmlDocs.app, 'Paragraphs'));
+  setVal('fLines', getTagValue(xmlDocs.app, 'Lines'));
+  setVal('fSlides', slides);
+  setVal('fNotes', getTagValue(xmlDocs.app, 'Notes'));
+
+  // Update Bento Stats
+  if (parseInt(slides, 10) > 0) {
+    document.getElementById('bentoScope').textContent = `${slides} snímkov`;
+  } else if (parseInt(pages, 10) > 0) {
+    document.getElementById('bentoScope').textContent = `${pages} strán`;
+  } else {
+    document.getElementById('bentoScope').textContent = `-`;
+  }
+  document.getElementById('bentoWords').textContent = Number(words).toLocaleString();
 
   // Custom properties
-  renderCustomProperties();
+  renderCustomPropertiesTable();
 }
 
 function syncFormToXmlDocs() {
-  const serializer = new XMLSerializer();
-
   // Core
-  setTagValue(xmlDocs.core, 'creator', 'dc:creator', getInputValue('coreCreator'));
-  setTagValue(xmlDocs.core, 'lastModifiedBy', 'cp:lastModifiedBy', getInputValue('coreLastModifiedBy'));
-  setTagValue(xmlDocs.core, 'title', 'dc:title', getInputValue('coreTitle'));
-  setTagValue(xmlDocs.core, 'subject', 'dc:subject', getInputValue('coreSubject'));
-  setTagValue(xmlDocs.core, 'keywords', 'cp:keywords', getInputValue('coreKeywords'));
-  setTagValue(xmlDocs.core, 'category', 'cp:category', getInputValue('coreCategory'));
-  setTagValue(xmlDocs.core, 'contentStatus', 'cp:contentStatus', getInputValue('coreContentStatus'));
-  setTagValue(xmlDocs.core, 'description', 'dc:description', getInputValue('coreDescription'));
-  setTagValue(xmlDocs.core, 'revision', 'cp:revision', getInputValue('coreRevision'));
+  setTagValue(xmlDocs.core, 'creator', 'dc:creator', getVal('fCreator'));
+  setTagValue(xmlDocs.core, 'lastModifiedBy', 'cp:lastModifiedBy', getVal('fLastModifiedBy'));
+  setTagValue(xmlDocs.core, 'title', 'dc:title', getVal('fTitle'));
+  setTagValue(xmlDocs.core, 'subject', 'dc:subject', getVal('fSubject'));
+  setTagValue(xmlDocs.core, 'keywords', 'cp:keywords', getVal('fKeywords'));
+  setTagValue(xmlDocs.core, 'category', 'cp:category', getVal('fCategory'));
+  setTagValue(xmlDocs.core, 'contentStatus', 'cp:contentStatus', getVal('fContentStatus'));
+  setTagValue(xmlDocs.core, 'description', 'dc:description', getVal('fDescription'));
+  setTagValue(xmlDocs.core, 'revision', 'cp:revision', getVal('fRevision'));
 
-  const createdLocal = getInputValue('coreCreated');
-  if (createdLocal) setTagValue(xmlDocs.core, 'created', 'dcterms:created', datetimeLocalToIso(createdLocal));
+  const createdVal = getVal('fCreated');
+  if (createdVal) setTagValue(xmlDocs.core, 'created', 'dcterms:created', datetimeLocalToIso(createdVal));
 
-  const modifiedLocal = getInputValue('coreModified');
-  if (modifiedLocal) setTagValue(xmlDocs.core, 'modified', 'dcterms:modified', datetimeLocalToIso(modifiedLocal));
+  const modifiedVal = getVal('fModified');
+  if (modifiedVal) setTagValue(xmlDocs.core, 'modified', 'dcterms:modified', datetimeLocalToIso(modifiedVal));
 
   // App
-  setTagValue(xmlDocs.app, 'TotalTime', 'TotalTime', getInputValue('appTotalTime'));
-  setTagValue(xmlDocs.app, 'Company', 'Company', getInputValue('appCompany'));
-  setTagValue(xmlDocs.app, 'Manager', 'Manager', getInputValue('appManager'));
-  setTagValue(xmlDocs.app, 'Template', 'Template', getInputValue('appTemplate'));
-  setTagValue(xmlDocs.app, 'Application', 'Application', getInputValue('appApplication'));
-  setTagValue(xmlDocs.app, 'AppVersion', 'AppVersion', getInputValue('appVersion'));
+  setTagValue(xmlDocs.app, 'TotalTime', 'TotalTime', getVal('fTotalTimeExact'));
+  setTagValue(xmlDocs.app, 'Company', 'Company', getVal('fCompany'));
+  setTagValue(xmlDocs.app, 'Manager', 'Manager', getVal('fManager'));
+  setTagValue(xmlDocs.app, 'Template', 'Template', getVal('fTemplate'));
+  setTagValue(xmlDocs.app, 'Application', 'Application', getVal('fApplication'));
+  setTagValue(xmlDocs.app, 'AppVersion', 'AppVersion', getVal('fAppVersion'));
 
-  setTagValue(xmlDocs.app, 'Pages', 'Pages', getInputValue('appPages'));
-  setTagValue(xmlDocs.app, 'Words', 'Words', getInputValue('appWords'));
-  setTagValue(xmlDocs.app, 'Characters', 'Characters', getInputValue('appCharacters'));
-  setTagValue(xmlDocs.app, 'CharactersWithSpaces', 'CharactersWithSpaces', getInputValue('appCharactersWithSpaces'));
-  setTagValue(xmlDocs.app, 'Paragraphs', 'Paragraphs', getInputValue('appParagraphs'));
-  setTagValue(xmlDocs.app, 'Lines', 'Lines', getInputValue('appLines'));
-  setTagValue(xmlDocs.app, 'Slides', 'Slides', getInputValue('appSlides'));
-  setTagValue(xmlDocs.app, 'Notes', 'Notes', getInputValue('appNotes'));
+  setTagValue(xmlDocs.app, 'Pages', 'Pages', getVal('fPages'));
+  setTagValue(xmlDocs.app, 'Words', 'Words', getVal('fWords'));
+  setTagValue(xmlDocs.app, 'Characters', 'Characters', getVal('fCharacters'));
+  setTagValue(xmlDocs.app, 'CharactersWithSpaces', 'CharactersWithSpaces', getVal('fCharactersWithSpaces'));
+  setTagValue(xmlDocs.app, 'Paragraphs', 'Paragraphs', getVal('fParagraphs'));
+  setTagValue(xmlDocs.app, 'Lines', 'Lines', getVal('fLines'));
+  setTagValue(xmlDocs.app, 'Slides', 'Slides', getVal('fSlides'));
+  setTagValue(xmlDocs.app, 'Notes', 'Notes', getVal('fNotes'));
 
-  markUnsaved();
+  document.getElementById('bentoRevision').textContent = `Rev. ${getVal('fRevision') || '1'}`;
 }
 
 // -----------------------------------------------------------------------------
-// XML Helper Utilities
+// Total Time Logic
 // -----------------------------------------------------------------------------
+function setTotalMinutes(minutes, triggerSync = true) {
+  const m = parseInt(minutes, 10) || 0;
+  document.getElementById('fTotalTimeExact').value = m;
+  document.getElementById('fTotalTimeRange').value = Math.min(m, 1800);
+  document.getElementById('timingLargeDisplay').textContent = `${m} min`;
+  document.getElementById('timingHumanConverted').textContent = `Zodpovedá: ${formatMinutesToHuman(m)}`;
+  document.getElementById('bentoTime').textContent = formatMinutesToShort(m);
+
+  if (triggerSync) {
+    setStatus(false, 'Zmenené pole');
+  }
+}
+
+function formatMinutesToHuman(m) {
+  if (m <= 0) return '0 hodín 0 minút';
+  const hours = Math.floor(m / 60);
+  const remaining = m % 60;
+  return `${hours} hodín ${remaining} minút`;
+}
+
+function formatMinutesToShort(m) {
+  if (m <= 0) return '0m';
+  const hours = Math.floor(m / 60);
+  const remaining = m % 60;
+  if (hours === 0) return `${remaining}m`;
+  if (remaining === 0) return `${hours}h`;
+  return `${hours}h ${remaining}m`;
+}
+
+// -----------------------------------------------------------------------------
+// Custom Properties
+// -----------------------------------------------------------------------------
+function renderCustomPropertiesTable() {
+  const tbody = document.getElementById('customPropsTableBody');
+  tbody.innerHTML = '';
+
+  if (!xmlDocs.custom) return;
+
+  const props = xmlDocs.custom.getElementsByTagName('property');
+  if (props.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-tertiary); padding: 20px;">Žiadne vlastné atribúty.</td></tr>`;
+    return;
+  }
+
+  for (let p of props) {
+    const name = p.getAttribute('name') || 'Atribút';
+    const val = p.textContent.trim();
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span style="font-weight: 600; font-family: var(--font-mono); font-size: 11px;">${escapeHtml(name)}</span></td>
+      <td><input type="text" class="input-field prop-inline-edit" data-name="${escapeHtml(name)}" value="${escapeHtml(val)}"></td>
+      <td style="text-align: right;">
+        <button class="btn btn-secondary btn-sm" onclick="removeCustomProperty('${escapeHtml(name)}')">Zmazať</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  document.querySelectorAll('.prop-inline-edit').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const propName = e.target.getAttribute('data-name');
+      updateCustomPropValue(propName, e.target.value);
+    });
+  });
+}
+
+function updateCustomPropValue(name, val) {
+  const props = xmlDocs.custom.getElementsByTagName('property');
+  for (let p of props) {
+    if (p.getAttribute('name') === name) {
+      if (p.firstElementChild) {
+        p.firstElementChild.textContent = val;
+      } else {
+        p.textContent = val;
+      }
+      setStatus(false, 'Zmenený atribút');
+      break;
+    }
+  }
+}
+
+function removeCustomProperty(name) {
+  const props = xmlDocs.custom.getElementsByTagName('property');
+  for (let p of props) {
+    if (p.getAttribute('name') === name) {
+      p.parentNode.removeChild(p);
+      renderCustomPropertiesTable();
+      setStatus(false, 'Odstránený atribút');
+      showToastNotice(`Atribút '${name}' bol zmazaný.`);
+      break;
+    }
+  }
+}
+
+function addNewCustomProperty() {
+  const nameInput = document.getElementById('newPropName');
+  const valInput = document.getElementById('newPropValue');
+  const name = nameInput.value.trim();
+  const val = valInput.value.trim();
+
+  if (!name) return;
+
+  const root = xmlDocs.custom.documentElement;
+  const existing = xmlDocs.custom.getElementsByTagName('property');
+  let maxPid = 1;
+  for (let p of existing) {
+    const pid = parseInt(p.getAttribute('pid') || '1', 10);
+    if (pid > maxPid) maxPid = pid;
+  }
+
+  const prop = xmlDocs.custom.createElement('property');
+  prop.setAttribute('fmtid', '{D5CDD505-2E9C-101B-9397-08002B2CF9AE}');
+  prop.setAttribute('pid', String(maxPid + 1));
+  prop.setAttribute('name', name);
+
+  const lpwstr = xmlDocs.custom.createElement('vt:lpwstr');
+  lpwstr.textContent = val;
+  prop.appendChild(lpwstr);
+
+  root.appendChild(prop);
+  renderCustomPropertiesTable();
+  nameInput.value = '';
+  valInput.value = '';
+  setStatus(false, 'Pridaný atribút');
+  showToastNotice(`Atribút '${name}' pridaný.`);
+}
+
+// -----------------------------------------------------------------------------
+// Raw XML Code Inspector
+// -----------------------------------------------------------------------------
+function loadRawXmlIntoEditor(partPath) {
+  activeXmlPart = partPath;
+  const serializer = new XMLSerializer();
+  let doc = null;
+
+  if (partPath === 'docProps/core.xml') doc = xmlDocs.core;
+  else if (partPath === 'docProps/app.xml') doc = xmlDocs.app;
+  else if (partPath === 'docProps/custom.xml') doc = xmlDocs.custom;
+
+  const editor = document.getElementById('xmlCodeEditor');
+  if (doc) {
+    const raw = serializer.serializeToString(doc);
+    editor.value = formatXml(raw);
+    document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid';
+    document.getElementById('xmlStatusNotice').style.color = '#22c55e';
+  } else {
+    editor.value = `<!-- Súbor ${partPath} v tomto balíku neexistuje -->`;
+  }
+}
+
+function applyXmlCodeChanges() {
+  const code = document.getElementById('xmlCodeEditor').value.trim();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(code, 'application/xml');
+
+  const error = doc.querySelector('parsererror');
+  if (error) {
+    document.getElementById('xmlStatusNotice').textContent = 'Syntax: Chyba parsovania!';
+    document.getElementById('xmlStatusNotice').style.color = '#ef4444';
+    alert('Chyba XML syntaxe:\n' + error.textContent);
+    return;
+  }
+
+  document.getElementById('xmlStatusNotice').textContent = 'Syntax: Valid & Aplikované';
+  document.getElementById('xmlStatusNotice').style.color = '#22c55e';
+
+  if (activeXmlPart === 'docProps/core.xml') xmlDocs.core = doc;
+  else if (activeXmlPart === 'docProps/app.xml') xmlDocs.app = doc;
+  else if (activeXmlPart === 'docProps/custom.xml') xmlDocs.custom = doc;
+
+  populateForm();
+  setStatus(false, 'Aplikované zmeny z XML');
+  showToastNotice(`Zmeny v '${activeXmlPart}' boli úspešne uložené.`);
+}
+
+// -----------------------------------------------------------------------------
+// Quick Actions
+// -----------------------------------------------------------------------------
+function actionSanitize() {
+  setVal('fCreator', '');
+  setVal('fLastModifiedBy', '');
+  setVal('fCompany', '');
+  setVal('fManager', '');
+  setVal('fTemplate', 'Normal.dotm');
+  setVal('fDescription', '');
+  syncFormToXmlDocs();
+  setStatus(false, 'Anonymizované');
+  showToastNotice('Osobné identifikačné údaje a cesta k šablóne boli vymazané.');
+}
+
+function actionSyncDates() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  const formatted = now.toISOString().slice(0, 16);
+  setVal('fCreated', formatted);
+  setVal('fModified', formatted);
+  syncFormToXmlDocs();
+  setStatus(false, 'Zosúladené dátumy');
+  showToastNotice('Dátumy vytvorenia a úpravy boli synchronizované.');
+}
+
+function actionClearTemplate() {
+  setVal('fTemplate', 'Normal.dotm');
+  syncFormToXmlDocs();
+  setStatus(false, 'Šablóna očistená');
+  showToastNotice('Cesta k šablóne zresetovaná na generický Normal.dotm.');
+}
+
+// -----------------------------------------------------------------------------
+// Export & Save File
+// -----------------------------------------------------------------------------
+async function exportModifiedPackage() {
+  if (!currentZip) return;
+
+  syncFormToXmlDocs();
+
+  const serializer = new XMLSerializer();
+
+  if (xmlDocs.core) {
+    const s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.core);
+    currentZip.file('docProps/core.xml', s);
+  }
+
+  if (xmlDocs.app) {
+    const s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.app);
+    currentZip.file('docProps/app.xml', s);
+  }
+
+  if (xmlDocs.custom) {
+    const s = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.custom);
+    currentZip.file('docProps/custom.xml', s);
+  }
+
+  const origName = currentFileInfo.name || 'dokument.docx';
+  const dotIdx = origName.lastIndexOf('.');
+  const base = dotIdx !== -1 ? origName.substring(0, dotIdx) : origName;
+  const ext = dotIdx !== -1 ? origName.substring(dotIdx) : '';
+  const exportName = `${base}_upravene${ext}`;
+
+  const blob = await currentZip.generateAsync({
+    type: 'blob',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 }
+  });
+
+  if (window.electronAPI) {
+    const arrayBuf = await blob.arrayBuffer();
+    const result = await window.electronAPI.saveFileDialog(exportName, Array.from(new Uint8Array(arrayBuf)));
+    if (result && result.success) {
+      setStatus(true, 'Uložené na disk');
+      showToastNotice(`Súbor bol úspešne uložený: ${result.savedPath}`);
+    }
+  } else {
+    // Browser fallback
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = exportName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setStatus(true, 'Stiahnuté');
+    showToastNotice(`Súbor '${exportName}' bol vyexportovaný.`);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Interactive Events & Helpers
+// -----------------------------------------------------------------------------
+function initEvents() {
+  // Input changes
+  document.querySelectorAll('.input-field').forEach(input => {
+    input.addEventListener('input', () => {
+      setStatus(false, 'Máte neuložené zmeny');
+    });
+  });
+
+  // Slider change
+  document.getElementById('fTotalTimeRange').addEventListener('input', (e) => {
+    setTotalMinutes(e.target.value);
+  });
+
+  document.getElementById('fTotalTimeExact').addEventListener('input', (e) => {
+    setTotalMinutes(e.target.value);
+  });
+
+  // Quick Action Buttons
+  document.getElementById('btnActionAnonymize').addEventListener('click', actionSanitize);
+  document.getElementById('btnActionSyncDates').addEventListener('click', actionSyncDates);
+  document.getElementById('btnActionClearTemplate').addEventListener('click', actionClearTemplate);
+
+  // Toolbar Buttons
+  document.getElementById('btnExportPrimary').addEventListener('click', exportModifiedPackage);
+  document.getElementById('btnOpenFileSecondary').addEventListener('click', () => {
+    document.getElementById('systemFileInput').click();
+  });
+
+  // Custom prop add
+  document.getElementById('btnAddNewProp').addEventListener('click', addNewCustomProperty);
+
+  // XML Raw Buttons
+  document.querySelectorAll('.raw-xml-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.raw-xml-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadRawXmlIntoEditor(btn.getAttribute('data-xml-part'));
+    });
+  });
+
+  document.getElementById('btnPrettifyXmlCode').addEventListener('click', () => {
+    const editor = document.getElementById('xmlCodeEditor');
+    editor.value = formatXml(editor.value);
+    showToastNotice('XML bolo naformátované.');
+  });
+
+  document.getElementById('btnApplyXmlCode').addEventListener('click', applyXmlCodeChanges);
+
+  // Sample document
+  document.getElementById('btnLoadSample').addEventListener('click', loadSamplePackage);
+}
+
+function initKeyboardShortcuts() {
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      exportModifiedPackage();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'o') {
+      e.preventDefault();
+      document.getElementById('systemFileInput').click();
+    }
+  });
+}
+
+// -----------------------------------------------------------------------------
+// Utility Functions
+// -----------------------------------------------------------------------------
+function setStatus(isClean, text) {
+  const bullet = document.getElementById('statusBullet');
+  const txt = document.getElementById('statusText');
+  if (isClean) {
+    bullet.className = 'status-bullet';
+    txt.textContent = text || 'Pripravené';
+  } else {
+    bullet.className = 'status-bullet unsaved';
+    txt.textContent = text || 'Máte neuložené zmeny';
+  }
+}
+
+function showToastNotice(msg) {
+  const toast = document.getElementById('toastNotice');
+  const text = document.getElementById('toastNoticeText');
+  text.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function getVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val || '';
+}
+
 function getTagValue(doc, tagName) {
   if (!doc) return '';
-  // Match both localName and qualified tag
   const elements = doc.getElementsByTagName('*');
   for (let el of elements) {
     if (el.localName === tagName || el.tagName === tagName || el.tagName.endsWith(':' + tagName)) {
@@ -355,159 +769,47 @@ function setTagValue(doc, tagName, defaultQualifiedName, value) {
   if (target) {
     target.textContent = value;
   } else {
-    // Create new element
     const newEl = doc.createElement(defaultQualifiedName);
     newEl.textContent = value;
-    if (defaultQualifiedName === 'dcterms:created' || defaultQualifiedName === 'dcterms:modified') {
+    if (defaultQualifiedName.startsWith('dcterms:')) {
       newEl.setAttribute('xsi:type', 'dcterms:W3CDTF');
     }
     root.appendChild(newEl);
   }
 }
 
-// -----------------------------------------------------------------------------
-// Custom Properties
-// -----------------------------------------------------------------------------
-function renderCustomProperties() {
-  const tbody = document.getElementById('customPropsBody');
-  tbody.innerHTML = '';
-
-  if (!xmlDocs.custom) return;
-
-  const props = xmlDocs.custom.getElementsByTagName('property');
-  if (props.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color: var(--text-secondary); padding: 18px;">Žiadne vlastné atribúty neboli nájdené.</td></tr>`;
-    return;
-  }
-
-  for (let p of props) {
-    const name = p.getAttribute('name') || 'Vlastnosť';
-    const val = p.textContent.trim();
-    const pid = p.getAttribute('pid') || '';
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${escapeHtml(name)}</strong></td>
-      <td><input type="text" class="form-input custom-val-input" data-pid="${pid}" data-name="${escapeHtml(name)}" value="${escapeHtml(val)}"></td>
-      <td style="text-align: right;">
-        <button class="btn btn-secondary btn-sm" onclick="deleteCustomProp('${escapeHtml(name)}')">Zmazať</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  // Add change listeners
-  document.querySelectorAll('.custom-val-input').forEach(input => {
-    input.addEventListener('input', (e) => {
-      const propName = e.target.getAttribute('data-name');
-      updateCustomPropValue(propName, e.target.value);
-    });
-  });
-}
-
-function updateCustomPropValue(name, newVal) {
-  const props = xmlDocs.custom.getElementsByTagName('property');
-  for (let p of props) {
-    if (p.getAttribute('name') === name) {
-      let child = p.firstElementChild;
-      if (child) {
-        child.textContent = newVal;
-      } else {
-        p.textContent = newVal;
-      }
-      markUnsaved();
-      break;
-    }
+function isoToDatetimeLocal(isoStr) {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return '';
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  } catch {
+    return '';
   }
 }
 
-function deleteCustomProp(name) {
-  const props = xmlDocs.custom.getElementsByTagName('property');
-  for (let p of props) {
-    if (p.getAttribute('name') === name) {
-      p.parentNode.removeChild(p);
-      renderCustomProperties();
-      markUnsaved();
-      showToast(`Vlastnosť '${name}' bola odstránená.`);
-      break;
-    }
+function datetimeLocalToIso(localStr) {
+  if (!localStr) return '';
+  try {
+    const d = new Date(localStr);
+    return d.toISOString();
+  } catch {
+    return '';
   }
 }
 
-function addCustomProperty(name, val) {
-  if (!name.trim()) {
-    alert('Zadajte prosím názov vlastnosti.');
-    return;
-  }
-  if (!xmlDocs.custom) {
-    const parser = new DOMParser();
-    xmlDocs.custom = parser.parseFromString(createDefaultCustomXml(), 'application/xml');
-  }
-
-  const root = xmlDocs.custom.documentElement;
-  const existing = xmlDocs.custom.getElementsByTagName('property');
-  let maxPid = 1;
-  for (let p of existing) {
-    const pid = parseInt(p.getAttribute('pid') || '1', 10);
-    if (pid > maxPid) maxPid = pid;
-  }
-
-  const prop = xmlDocs.custom.createElement('property');
-  prop.setAttribute('fmtid', '{D5CDD505-2E9C-101B-9397-08002B2CF9AE}');
-  prop.setAttribute('pid', String(maxPid + 1));
-  prop.setAttribute('name', name.trim());
-
-  const lpwstr = xmlDocs.custom.createElement('vt:lpwstr');
-  lpwstr.textContent = val.trim();
-  prop.appendChild(lpwstr);
-
-  root.appendChild(prop);
-  renderCustomProperties();
-  markUnsaved();
-  showToast(`Vlastnosť '${name}' bola pridaná!`);
-
-  document.getElementById('newCustomName').value = '';
-  document.getElementById('newCustomValue').value = '';
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-// -----------------------------------------------------------------------------
-// Raw XML Editor (7-Zip Mode)
-// -----------------------------------------------------------------------------
-function loadRawXmlIntoEditor(filename) {
-  activeRawFile = filename;
-  const serializer = new XMLSerializer();
-  let doc = null;
-
-  if (filename === 'docProps/core.xml') doc = xmlDocs.core;
-  else if (filename === 'docProps/app.xml') doc = xmlDocs.app;
-  else if (filename === 'docProps/custom.xml') doc = xmlDocs.custom;
-
-  if (doc) {
-    const rawText = serializer.serializeToString(doc);
-    rawXmlEditor.value = formatXml(rawText);
-  } else {
-    rawXmlEditor.value = `<!-- Súbor ${filename} v tomto archíve neexistuje -->`;
-  }
-}
-
-function applyRawXmlChanges() {
-  const text = rawXmlEditor.value.trim();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(text, 'application/xml');
-
-  const parserError = doc.querySelector('parsererror');
-  if (parserError) {
-    alert('Chyba XML syntaxe! Skontrolujte tagy:\n\n' + parserError.textContent);
-    return;
-  }
-
-  if (activeRawFile === 'docProps/core.xml') xmlDocs.core = doc;
-  else if (activeRawFile === 'docProps/app.xml') xmlDocs.app = doc;
-  else if (activeRawFile === 'docProps/custom.xml') xmlDocs.custom = doc;
-
-  populateFormFromXml();
-  markUnsaved();
-  showToast(`Zmeny v '${activeRawFile}' boli úspešne aplikované!`);
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function formatXml(xml) {
@@ -536,352 +838,25 @@ function formatXml(xml) {
   return formatted.trim();
 }
 
-// -----------------------------------------------------------------------------
-// Quick Actions / Presets
-// -----------------------------------------------------------------------------
-function quickAnonymize() {
-  setInputValue('coreCreator', '');
-  setInputValue('coreLastModifiedBy', '');
-  setInputValue('coreDescription', '');
-  setInputValue('appCompany', '');
-  setInputValue('appManager', '');
-  setInputValue('appTemplate', 'Normal.dotm');
-  syncFormToXmlDocs();
-  showToast('🛡️ Osobné stopy (autor, firma, editor) boli vymazané.');
-}
-
-function setTotalTime(minutes) {
-  setInputValue('appTotalTime', minutes);
-  updateTotalTimeHuman(minutes);
-  syncFormToXmlDocs();
-  showToast(`⏱️ Čas úprav nastavený na ${minutes} minút.`);
-}
-
-function quickSyncDates() {
-  setFieldToNow('coreCreated');
-  setFieldToNow('coreModified');
-  syncFormToXmlDocs();
-  showToast('📅 Dátumy boli zosúladené s aktuálnym časom.');
-}
-
-function saveOriginalSnapshot() {
-  originalSnapshot = {
-    creator: getInputValue('coreCreator'),
-    lastModifiedBy: getInputValue('coreLastModifiedBy'),
-    title: getInputValue('coreTitle'),
-    subject: getInputValue('coreSubject'),
-    keywords: getInputValue('coreKeywords'),
-    category: getInputValue('coreCategory'),
-    contentStatus: getInputValue('coreContentStatus'),
-    description: getInputValue('coreDescription'),
-    revision: getInputValue('coreRevision'),
-    created: getInputValue('coreCreated'),
-    modified: getInputValue('coreModified'),
-    totalTime: getInputValue('appTotalTime'),
-    company: getInputValue('appCompany'),
-    manager: getInputValue('appManager'),
-    template: getInputValue('appTemplate'),
-    app: getInputValue('appApplication'),
-    version: getInputValue('appVersion')
-  };
-  setSaveIndicator(true);
-}
-
-function resetToOriginal() {
-  if (!originalSnapshot) return;
-  setInputValue('coreCreator', originalSnapshot.creator);
-  setInputValue('coreLastModifiedBy', originalSnapshot.lastModifiedBy);
-  setInputValue('coreTitle', originalSnapshot.title);
-  setInputValue('coreSubject', originalSnapshot.subject);
-  setInputValue('coreKeywords', originalSnapshot.keywords);
-  setInputValue('coreCategory', originalSnapshot.category);
-  setInputValue('coreContentStatus', originalSnapshot.contentStatus);
-  setInputValue('coreDescription', originalSnapshot.description);
-  setInputValue('coreRevision', originalSnapshot.revision);
-  setInputValue('coreCreated', originalSnapshot.created);
-  setInputValue('coreModified', originalSnapshot.modified);
-  setInputValue('appTotalTime', originalSnapshot.totalTime);
-  setInputValue('appCompany', originalSnapshot.company);
-  setInputValue('appManager', originalSnapshot.manager);
-  setInputValue('appTemplate', originalSnapshot.template);
-  setInputValue('appApplication', originalSnapshot.app);
-  setInputValue('appVersion', originalSnapshot.version);
-
-  updateTotalTimeHuman(originalSnapshot.totalTime);
-  syncFormToXmlDocs();
-  showToast('🔄 Pôvodné hodnoty boli obnovené.');
-}
-
-// -----------------------------------------------------------------------------
-// Export and Download
-// -----------------------------------------------------------------------------
-async function downloadModifiedFile() {
-  if (!currentZip || !currentFile) return;
-
-  syncFormToXmlDocs();
-
-  const serializer = new XMLSerializer();
-
-  // Pack core.xml
-  if (xmlDocs.core) {
-    const coreXmlStr = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.core);
-    currentZip.file('docProps/core.xml', coreXmlStr);
-  }
-
-  // Pack app.xml
-  if (xmlDocs.app) {
-    const appXmlStr = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.app);
-    currentZip.file('docProps/app.xml', appXmlStr);
-  }
-
-  // Pack custom.xml
-  if (xmlDocs.custom) {
-    const customXmlStr = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' + serializer.serializeToString(xmlDocs.custom);
-    currentZip.file('docProps/custom.xml', customXmlStr);
-  }
-
-  // Generate output blob
-  const outputBlob = await currentZip.generateAsync({
-    type: 'blob',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 }
-  });
-
-  // Filename
-  const origName = currentFile.name;
-  const lastDot = origName.lastIndexOf('.');
-  const baseName = lastDot !== -1 ? origName.substring(0, lastDot) : origName;
-  const ext = lastDot !== -1 ? origName.substring(lastDot) : '';
-  const newName = `${baseName}_upravene${ext}`;
-
-  // Trigger download
-  const url = URL.createObjectURL(outputBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = newName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  setSaveIndicator(true);
-  showToast(`Súbor '${newName}' bol úspešne exportovaný!`);
-}
-
-function copySummaryToClipboard() {
-  syncFormToXmlDocs();
-  const summary = `
-========================================
- PREHĽAD METADÁT: ${currentFile ? currentFile.name : 'Dokument'}
-========================================
-- Autor (Creator): ${getInputValue('coreCreator')}
-- Posledný editor: ${getInputValue('coreLastModifiedBy')}
-- Názov dokumentu: ${getInputValue('coreTitle')}
-- Predmet: ${getInputValue('coreSubject')}
-- Číslo revízie: ${getInputValue('coreRevision')}
-- Celkový čas úprav: ${getInputValue('appTotalTime')} minút (${formatHumanMinutes(getInputValue('appTotalTime'))})
-- Vytvorené: ${getInputValue('coreCreated')}
-- Upravené: ${getInputValue('coreModified')}
-- Spoločnosť: ${getInputValue('appCompany')}
-- Manažér: ${getInputValue('appManager')}
-- Šablóna: ${getInputValue('appTemplate')}
-- Počet strán: ${getInputValue('appPages')}
-- Počet slov: ${getInputValue('appWords')}
-========================================
-  `.trim();
-
-  navigator.clipboard.writeText(summary).then(() => {
-    showToast('📋 Prehľad metadát bol skopírovaný do schránky!');
-  });
-}
-
-// -----------------------------------------------------------------------------
-// Interactive Events Registration
-// -----------------------------------------------------------------------------
-function initEvents() {
-  // Field auto-sync
-  const formInputs = document.querySelectorAll('.form-input, .form-textarea');
-  formInputs.forEach(input => {
-    input.addEventListener('input', () => {
-      markUnsaved();
-      if (input.id === 'appTotalTime') {
-        updateTotalTimeHuman(input.value);
-      }
-    });
-  });
-
-  // Buttons
-  document.getElementById('btnChangeFile').addEventListener('click', () => {
-    dropzoneSection.style.display = 'block';
-    editorSection.style.display = 'none';
-    saveBar.style.display = 'none';
-    fileInput.value = '';
-  });
-
-  document.getElementById('btnQuickAnonymize').addEventListener('click', quickAnonymize);
-  document.getElementById('btnQuickTime120').addEventListener('click', () => setTotalTime(120));
-  document.getElementById('btnQuickTime480').addEventListener('click', () => setTotalTime(480));
-  document.getElementById('btnQuickSyncDates').addEventListener('click', quickSyncDates);
-  document.getElementById('btnQuickReset').addEventListener('click', resetToOriginal);
-
-  document.getElementById('btnDownload').addEventListener('click', downloadModifiedFile);
-  document.getElementById('btnCopySummary').addEventListener('click', copySummaryToClipboard);
-
-  document.getElementById('btnAddCustomProp').addEventListener('click', () => {
-    const name = document.getElementById('newCustomName').value;
-    const val = document.getElementById('newCustomValue').value;
-    addCustomProperty(name, val);
-  });
-
-  // Raw XML Buttons
-  document.querySelectorAll('.xml-file-picker button').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.xml-file-picker button').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadRawXmlIntoEditor(btn.getAttribute('data-xml-file'));
-    });
-  });
-
-  document.getElementById('btnPrettifyXml').addEventListener('click', () => {
-    rawXmlEditor.value = formatXml(rawXmlEditor.value);
-    showToast('XML bolo naformátované.');
-  });
-
-  document.getElementById('btnApplyRawXml').addEventListener('click', applyRawXmlChanges);
-
-  // Sample document button
-  document.getElementById('btnSampleDoc').addEventListener('click', loadSampleDocument);
-}
-
-// -----------------------------------------------------------------------------
-// Helpers & Default Templates
-// -----------------------------------------------------------------------------
-function getInputValue(id) {
-  const el = document.getElementById(id);
-  return el ? el.value : '';
-}
-
-function setInputValue(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.value = val || '';
-}
-
-function setField(id, val) {
-  setInputValue(id, val);
-  markUnsaved();
-}
-
-function clearField(id) {
-  setInputValue(id, '');
-  markUnsaved();
-}
-
-function copyField(sourceId, targetId) {
-  setInputValue(targetId, getInputValue(sourceId));
-  markUnsaved();
-}
-
-function setFieldToNow(id) {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  const formatted = now.toISOString().slice(0, 16);
-  setInputValue(id, formatted);
-  markUnsaved();
-}
-
-function isoToDatetimeLocal(isoStr) {
-  if (!isoStr) return '';
-  try {
-    const d = new Date(isoStr);
-    if (isNaN(d.getTime())) return '';
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 16);
-  } catch {
-    return '';
-  }
-}
-
-function datetimeLocalToIso(localStr) {
-  if (!localStr) return '';
-  try {
-    const d = new Date(localStr);
-    return d.toISOString();
-  } catch {
-    return '';
-  }
-}
-
-function updateTotalTimeHuman(minutes) {
-  const label = document.getElementById('totalTimeHuman');
-  label.textContent = `Zodpovedá: ${formatHumanMinutes(minutes)}`;
-}
-
-function formatHumanMinutes(min) {
-  const m = parseInt(min, 10);
-  if (isNaN(m) || m <= 0) return '0 minút';
-  const hours = Math.floor(m / 60);
-  const remainingMin = m % 60;
-  if (hours === 0) return `${remainingMin} minút`;
-  if (remainingMin === 0) return `${hours} hod`;
-  return `${hours} hod ${remainingMin} min`;
-}
-
-function formatBytes(bytes) {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-function markUnsaved() {
-  setSaveIndicator(false);
-}
-
-function setSaveIndicator(isSynced) {
-  const ind = document.getElementById('saveIndicator');
-  const txt = document.getElementById('saveStatusText');
-  if (isSynced) {
-    ind.className = 'status-indicator synced';
-    txt.textContent = 'Všetky zmeny uložené';
-  } else {
-    ind.className = 'status-indicator';
-    txt.textContent = 'Máte neuložené zmeny';
-  }
-}
-
-function showToast(msg) {
-  toastMessageEl.textContent = msg;
-  toastEl.classList.add('show');
-  setTimeout(() => toastEl.classList.remove('show'), 3200);
-}
-
-function escapeHtml(str) {
-  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function createDefaultCoreXml() {
+function createBlankCoreXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="${NS.cp}" xmlns:dc="${NS.dc}" xmlns:dcterms="${NS.dcterms}" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 </cp:coreProperties>`;
 }
 
-function createDefaultAppXml() {
+function createBlankAppXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="${NS.ep}" xmlns:vt="${NS.vt}">
 </Properties>`;
 }
 
-function createDefaultCustomXml() {
+function createBlankCustomXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="${NS.cust}" xmlns:vt="${NS.vt}">
 </Properties>`;
 }
 
-// -----------------------------------------------------------------------------
-// Interactive Sample Document Generator
-// -----------------------------------------------------------------------------
-async function loadSampleDocument() {
+async function loadSamplePackage() {
   const sampleZip = new JSZip();
 
   const coreXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -890,10 +865,10 @@ async function loadSampleDocument() {
                    xmlns:dcterms="http://purl.org/dc/terms/" 
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <dc:title>Diplomová práca - Analýza trhových anomálií</dc:title>
-    <dc:subject>Aplikovaná ekonometria a financie</dc:subject>
+    <dc:subject>Aplikovaná ekonometria</dc:subject>
     <dc:creator>Ján Novák</dc:creator>
-    <cp:keywords>financie, investície, analýza, dáta</cp:keywords>
-    <dc:description>Záverečná diplomová práca pre obhajobu.</dc:description>
+    <cp:keywords>financie, investície, analýza, modelovanie</cp:keywords>
+    <dc:description>Záverečný dokument pre interné hodnotenie.</dc:description>
     <cp:lastModifiedBy>Peter Vedúci</cp:lastModifiedBy>
     <cp:revision>28</cp:revision>
     <dcterms:created xsi:type="dcterms:W3CDTF">2025-11-10T09:15:00Z</dcterms:created>
@@ -904,7 +879,7 @@ async function loadSampleDocument() {
 
   const appXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <Template>C:\\Users\\JanNovak\\AppData\\Roaming\\Microsoft\\Templates\\Normal.dotm</Template>
+    <Template>C:\\Users\\Admin\\Templates\\Normal.dotm</Template>
     <TotalTime>580</TotalTime>
     <Pages>52</Pages>
     <Words>15420</Words>
@@ -922,8 +897,8 @@ async function loadSampleDocument() {
 
   const customXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Interné Číslo"><vt:lpwstr>INT-2026-DOC-042</vt:lpwstr></property>
-    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Klasifikácia"><vt:lpwstr>Dôverné</vt:lpwstr></property>
+    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="ID Projektu"><vt:lpwstr>PRJ-2026-09</vt:lpwstr></property>
+    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Dôvernosť"><vt:lpwstr>Interné</vt:lpwstr></property>
 </Properties>`;
 
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -941,7 +916,7 @@ async function loadSampleDocument() {
   sampleZip.file('docProps/custom.xml', customXml);
 
   const blob = await sampleZip.generateAsync({ type: 'blob' });
-  const fakeFile = new File([blob], 'Vzorova_diplomovka.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  const buf = await blob.arrayBuffer();
 
-  loadFile(fakeFile);
+  loadFromBinaryBuffer(buf, 'Vzorova_diplomovka.docx', buf.byteLength, 'samples/Vzorova_diplomovka.docx');
 }

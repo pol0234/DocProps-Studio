@@ -1,16 +1,28 @@
 {
   "name": "docx_metadata_editor",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Professional Office Metadata Inspector and Editor (DOCX, PPTX, XLSX)",
+  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "electron .",
+    "pack": "electron-packager . \"DocProps Studio\" --platform=win32 --arch=x64 --out=dist --overwrite --prune=true"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "ooxml",
+    "docx",
+    "pptx",
+    "xlsx",
+    "metadata",
+    "editor",
+    "privacy"
+  ],
+  "author": "pol0234",
+  "license": "MIT",
   "dependencies": {
     "jszip": "^3.10.2"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-packager": "^17.1.2"
   }
 }
