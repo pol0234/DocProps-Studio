@@ -47,7 +47,13 @@ Aplikáciu spustíte okamžite bez potreby buildovania:
 npm start
 ```
 
-### Krok 3: Zostavenie vlastného prenosného súboru (.exe)
+### Krok 3: Spustenie automatických E2E testov (Playwright)
+Overenie správneho zápisu a persistence metadát vo formátoch OpenXML:
+```bash
+npm test
+```
+
+### Krok 4: Zostavenie vlastného prenosného súboru (.exe)
 Ak chcete vygenerovať samostatnú prenosnú verziu aplikácie pre Windows, spustite:
 ```bash
 npm run pack
