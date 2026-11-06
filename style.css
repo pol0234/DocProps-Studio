@@ -216,11 +216,11 @@ html, body {
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 0 14px;
   -webkit-app-region: drag;
   z-index: 1000;
-  gap: 12px;
+  gap: 8px;
+  overflow: hidden;
 }
 
 .header-brand-cluster {
@@ -229,6 +229,7 @@ html, body {
   gap: 10px;
   min-width: 0;
   flex-shrink: 0;
+  /* Left anchor — never shrinks */
 }
 
 /* Master Brand Logo Badge (Linear Monochrome Squircle) */
@@ -524,16 +525,25 @@ html, body {
 .status-dot.synced { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.7); }
 .status-dot.dirty { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.7); }
 
-/* Center: Horizon Segmented Tabs */
+/* Center: Horizon Segmented Tabs — takes all available space between brand & actions */
 .horizon-nav-tabs {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 3px;
   background: var(--bg-input);
   padding: 3px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-subtle);
   -webkit-app-region: no-drag;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+}
+.horizon-nav-tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Edge/Safari */
 }
 
 .nav-tab-btn {
@@ -569,7 +579,7 @@ html, body {
   color: var(--text-accent);
 }
 
-/* Header Action Controls */
+/* Header Action Controls — right anchor, never shrinks, reserves space for Windows chrome buttons */
 .header-action-cluster {
   display: flex;
   align-items: center;
@@ -577,6 +587,7 @@ html, body {
   flex-shrink: 0;
   -webkit-app-region: no-drag;
   padding-right: 140px; /* Windows system window buttons reserve */
+  min-width: 0;
 }
 
 .workspace-header-actions {
