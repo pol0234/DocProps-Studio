@@ -210,16 +210,21 @@ html, body {
 .studio-header {
   height: 48px;
   min-height: 48px;
+  max-height: 48px;
   background: var(--bg-header);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
-  padding: 0 14px;
+  padding-left: 14px;
+  padding-right: 144px; /* Reserves space for native Windows caption buttons (Minimize, Maximize, Close) */
   -webkit-app-region: drag;
   z-index: 1000;
   gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100vw;
   overflow: hidden;
 }
 
@@ -229,21 +234,27 @@ html, body {
   gap: 10px;
   min-width: 0;
   flex-shrink: 0;
-  /* Left anchor — never shrinks */
+  -webkit-app-region: drag;
 }
 
-/* Master Brand Logo Badge (Linear Monochrome Squircle) */
+.brand-badge-box,
+.brand-text,
+.doc-file-capsule {
+  -webkit-app-region: no-drag;
+}
+
+/* Master Brand Format Badge (Dynamic Document Theme) */
 .brand-badge-box {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: linear-gradient(180deg, #161b26 0%, #0a0d14 100%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, var(--theme-accent-surface) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border: 1px solid var(--theme-accent-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 12px var(--theme-accent-glow), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  color: var(--theme-accent);
+  box-shadow: 0 0 16px var(--theme-accent-glow), inset 0 1px 1px rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -579,15 +590,18 @@ html, body {
   color: var(--text-accent);
 }
 
-/* Header Action Controls — right anchor, never shrinks, reserves space for Windows chrome buttons */
+/* Header Action Controls — right anchor, never shrinks, flushed safely against the Windows chrome zone */
 .header-action-cluster {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
   -webkit-app-region: no-drag;
-  padding-right: 140px; /* Windows system window buttons reserve */
+  margin-left: auto;
+  padding-right: 0;
   min-width: 0;
+  position: relative;
+  z-index: 10;
 }
 
 .workspace-header-actions {
@@ -1584,8 +1598,8 @@ html, body {
    RESPONSIVE MEDIA QUERIES (Fluid Adaptive Architecture)
    -------------------------------------------------------------------------- */
 
-/* Large desktop / narrow window: Active tab stays expanded, inactive collapse to icon */
-@media (max-width: 1400px) {
+/* Large desktop / standard window: Active tab stays expanded with text, inactive collapse to icon */
+@media (max-width: 1550px) {
   .horizon-nav-tabs .nav-tab-btn:not(.active) .nav-tab-label {
     display: none;
   }
@@ -1593,15 +1607,15 @@ html, body {
     padding: 4px 8px;
   }
   .doc-file-capsule {
-    max-width: 320px;
+    max-width: 280px;
   }
   .file-name {
-    max-width: 150px;
+    max-width: 140px;
   }
 }
 
-/* Medium compact window: collapse secondary buttons to icon-only, hide file size */
-@media (max-width: 1140px) {
+/* Medium window: collapse secondary action buttons to icon-only, hide file size to guarantee Save is prominent */
+@media (max-width: 1360px) {
   .workspace-header-actions .btn-secondary .btn-text,
   .btn-ghost .btn-text {
     display: none;
@@ -1615,15 +1629,15 @@ html, body {
     display: none;
   }
   .doc-file-capsule {
-    max-width: 220px;
+    max-width: 200px;
   }
   .file-name {
-    max-width: 110px;
+    max-width: 100px;
   }
 }
 
 /* Compact window: collapse all tabs to icon-only, keep Save prominent */
-@media (max-width: 980px) {
+@media (max-width: 1080px) {
   .horizon-nav-tabs .nav-tab-btn .nav-tab-label {
     display: none !important;
   }
@@ -1634,7 +1648,7 @@ html, body {
     display: none;
   }
   .doc-file-capsule {
-    max-width: 170px;
+    max-width: 160px;
   }
   .file-name {
     max-width: 80px;
@@ -1643,7 +1657,7 @@ html, body {
     gap: 6px;
   }
   .studio-header {
-    padding: 0 8px;
+    padding-left: 8px;
     gap: 6px;
   }
 }
@@ -1659,8 +1673,5 @@ html, body {
   }
   .col-span-2 {
     grid-column: span 1;
-  }
-  .header-action-cluster {
-    padding-right: 120px;
   }
 }

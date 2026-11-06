@@ -233,28 +233,28 @@ async function createTempOfficeFile(type, fileName) {
     console.warn('Upozornenie pri mazaní testovacích súborov:', cleanErr.message);
   }
 
-  // 10. TEST RESPONSIVITY TOP BARU (Kompaktné okno a viditeľnosť tlačidla Uložiť)
-  console.log('\n10. Test responzivity top baru pri kompaktnom okne (1000px & 960px)...');
-  await page.setViewportSize({ width: 1000, height: 680 });
-  await page.waitForTimeout(300);
+  // 10. TEST RESPONZIVITY TOP BARU (Kompaktné aj široké okná & bezpečná zóna pred Windows tlačidlami)
+  console.log('\n10. Test responzivity top baru a bezpečnej zóny pred Windows tlačidlami...');
+  const testWidths = [1600, 1440, 1240, 1024, 960];
 
-  const saveBtnVisible1000 = await page.isVisible('#btnSaveDirect');
-  const saveBtnBox1000 = await page.locator('#btnSaveDirect').boundingBox();
-  console.log(`   Šírka okna 1000px -> Tlačidlo Uložiť viditeľné: ${saveBtnVisible1000}, Pozícia: x=${Math.round(saveBtnBox1000.x)}, w=${Math.round(saveBtnBox1000.width)}`);
+  for (const w of testWidths) {
+    await page.setViewportSize({ width: w, height: 720 });
+    await page.waitForTimeout(200);
 
-  if (!saveBtnVisible1000 || saveBtnBox1000.x + saveBtnBox1000.width > 1000) {
-    throw new Error('Tlačidlo Uložiť presahuje okno pri šírke 1000px!');
-  }
+    const saveBtn = page.locator('#btnSaveDirect');
+    const isVisible = await saveBtn.isVisible();
+    const box = await saveBtn.boundingBox();
+    const rightEdge = box ? Math.round(box.x + box.width) : 0;
+    const safeLimit = w - 140; // Windows minimize/maximize/close reserve zone
 
-  await page.setViewportSize({ width: 960, height: 640 });
-  await page.waitForTimeout(300);
+    console.log(`   Šírka okna ${w}px -> Uložiť viditeľné: ${isVisible}, pravý okraj: ${rightEdge}px (limit bezpečnej zóny: <= ${safeLimit}px)`);
 
-  const saveBtnVisible960 = await page.isVisible('#btnSaveDirect');
-  const saveBtnBox960 = await page.locator('#btnSaveDirect').boundingBox();
-  console.log(`   Šírka okna 960px -> Tlačidlo Uložiť viditeľné: ${saveBtnVisible960}, Pozícia: x=${Math.round(saveBtnBox960.x)}, w=${Math.round(saveBtnBox960.width)}`);
-
-  if (!saveBtnVisible960 || saveBtnBox960.x + saveBtnBox960.width > 960) {
-    throw new Error('Tlačidlo Uložiť presahuje okno pri šírke 960px!');
+    if (!isVisible) {
+      throw new Error(`Tlačidlo Uložiť nie je viditeľné pri šírke ${w}px!`);
+    }
+    if (rightEdge > safeLimit) {
+      throw new Error(`KOLÍZIA: Tlačidlo Uložiť zasahuje do zóny Windows systémových tlačidiel (${rightEdge}px > ${safeLimit}px) pri šírke ${w}px!`);
+    }
   }
 
   await browser.close();
