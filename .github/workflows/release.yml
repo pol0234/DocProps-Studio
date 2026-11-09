@@ -59,3 +59,4 @@ jobs:
           files: |
             DocProps-Studio-*-windows-x64.zip
             DocProps-Studio-*-windows-x64.zip.sha256
+
