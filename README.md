@@ -79,8 +79,20 @@ npm test
 Pre použitie v termináli alebo dávkových skriptoch je k dispozícii skript `cli_editor.py`:
 ```bash
 python cli_editor.py inspect "dokument.docx"
+python cli_editor.py edit "dokument.docx" --author "Nový Autor" --total-time 120
+# alebo s aliasom 'set':
 python cli_editor.py set "dokument.docx" --author "Nový Autor" --total-time 120
 ```
+
+---
+
+## Bezpečnosť a ochrana súkromia
+
+Aplikácia je postavená na prísnych bezpečnostných pravidlách (Zero-Telemetry & Local Isolation):
+- Zavedená striktná hlavička **Content Security Policy (CSP)**.
+- Zamedzený vzdialený sieťový prístup (`connect-src 'none'`).
+- Izolované runtime prostredie s `contextIsolation: true` a validovanými IPC kanálmi.
+- Viac informácií nájdete v priloženom [SECURITY.md](SECURITY.md).
 
 ---
 

@@ -1534,7 +1534,7 @@ async function loadSampleDiplomovka() {
 
   sampleZip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <Template>C:\\Users\\Admin\\Templates\\Normal.dotm</Template>
+    <Template>C:\\Users\\User\\AppData\\Roaming\\Microsoft\\Templates\\Normal.dotm</Template>
     <TotalTime>540</TotalTime>
     <Pages>48</Pages>
     <Words>14250</Words>

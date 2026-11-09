@@ -23,8 +23,13 @@ temp_test/
 test_*.docx
 test_*.xlsx
 test_*.pptx
+test_*.png
+test_*.ico
+test_*.js
 *.log
 scratch/
+dist_fresh/
+test_pack/
 
 # Environment & Secrets (Safety)
 .env

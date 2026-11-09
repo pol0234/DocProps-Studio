@@ -229,8 +229,8 @@ def main():
     inspect_parser = subparsers.add_parser("inspect", help="Zobraziť metadáta súboru")
     inspect_parser.add_argument("file", help="Cesta k súboru DOCX / PPTX / XLSX")
 
-    # Edit
-    edit_parser = subparsers.add_parser("edit", help="Upraviť metadáta")
+    # Edit / Set
+    edit_parser = subparsers.add_parser("edit", aliases=["set"], help="Upraviť metadáta (alias: set)")
     edit_parser.add_argument("file", help="Cesta k súboru")
     edit_parser.add_argument("--out", help="Výstupná cesta (predvolene prepíše pôvodný)")
     edit_parser.add_argument("--title", help="Nový názov")
@@ -251,7 +251,7 @@ def main():
 
     if args.cmd == "inspect":
         inspect_file(args.file)
-    elif args.cmd == "edit":
+    elif args.cmd in ("edit", "set"):
         edit_file(
             args.file,
             args.out,

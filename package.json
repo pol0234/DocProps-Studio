@@ -19,6 +19,14 @@
   ],
   "author": "pol0234",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pol0234/DOCX_metadata_editor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pol0234/DOCX_metadata_editor/issues"
+  },
+  "homepage": "https://github.com/pol0234/DOCX_metadata_editor#readme",
   "dependencies": {
     "gsap": "^3.15.1",
     "jszip": "^3.10.2"
