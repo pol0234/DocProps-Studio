@@ -1,6 +1,6 @@
 # DocProps Studio
 
-[![CI Verification](https://github.com/pol0234/DOCX_metadata_editor/actions/workflows/ci.yml/badge.svg)](https://github.com/pol0234/DOCX_metadata_editor/actions/workflows/ci.yml)
+[![CI Verification](https://github.com/pol0234/DocProps-Studio/actions/workflows/ci.yml/badge.svg)](https://github.com/pol0234/DocProps-Studio/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d4.svg)]()
 
@@ -36,8 +36,8 @@
 
 ### 1. Clone & Install Dependencies
 ```bash
-git clone https://github.com/pol0234/DOCX_metadata_editor.git
-cd DOCX_metadata_editor
+git clone https://github.com/pol0234/DocProps-Studio.git
+cd DocProps-Studio
 npm install
 ```
 
