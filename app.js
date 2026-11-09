@@ -347,8 +347,8 @@ async function loadFile(file) {
     const arrayBuffer = await file.arrayBuffer();
     await loadFromBinaryBuffer(arrayBuffer, file.name, file.size, file.path || file.name);
   } catch (err) {
-    console.error('Chyba načítania:', err);
-    alert('Nepodarilo sa načítať súbor:\n' + (err.message || err));
+    console.error('File load error:', err);
+    alert('Failed to load file:\n' + (err.message || err));
   }
 }
 
@@ -360,7 +360,7 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
     const ext = (fileName || '').split('.').pop().toLowerCase();
 
     if (['doc', 'xls', 'ppt'].includes(ext)) {
-      alert(`Súbor "${fileName}" je v starom binárnom formáte Office (.${ext}).\n\nDocProps Studio vyžaduje moderné OpenXML balíky (.docx, .xlsx, .pptx). Otvorte súbor v Microsofte Office a zvoľte "Uložiť ako" vo formáte .${ext}x.`);
+      alert(`File "${fileName}" is in a legacy binary Office format (.${ext}).\n\nDocProps Studio requires modern OpenXML packages (.docx, .xlsx, .pptx). Please open the file in Microsoft Office and choose "Save As" in .${ext}x format.`);
       return;
     }
 
@@ -422,11 +422,11 @@ async function loadFromBinaryBuffer(buffer, fileName, fileSize, filePath) {
       }
     }
 
-    setStatus(true, 'Dokument pripravený');
-    showToastNotice(`Dokument '${fileName}' bol úspešne otvorený.`);
+    setStatus(true, 'Document ready');
+    showToastNotice(`Document '${fileName}' loaded successfully.`);
   } catch (err) {
-    console.error('Chyba OpenXML:', err);
-    alert('Neplatný formát OpenXML archívu alebo poškodený súbor:\n' + (err.message || err));
+    console.error('OpenXML Error:', err);
+    alert('Invalid OpenXML package format or corrupted file:\n' + (err.message || err));
   }
 }
 
@@ -464,11 +464,11 @@ function applyDocumentTypeContext(type) {
     if (brandIconExcel) brandIconExcel.style.display = 'none';
     if (brandIconPpt) brandIconPpt.style.display = 'none';
 
-    document.title = `DocProps Studio - ${currentFileInfo.name || 'Dokument.docx'}`;
+    document.title = `DocProps Studio - ${currentFileInfo.name || 'document.docx'}`;
 
-    if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika obsahu';
-    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Metrika obsahu & Počítadlá (Word)';
-    if (sumScopeLabel) sumScopeLabel.textContent = 'ROZSAH OBSAHU';
+    if (navMetricsTitle) navMetricsTitle.textContent = 'Content Metrics';
+    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Content Metrics & Counters (Word)';
+    if (sumScopeLabel) sumScopeLabel.textContent = 'CONTENT SCOPE';
     if (sumRevWrap) sumRevWrap.style.display = 'flex';
 
     wordFields.forEach(el => el.style.display = 'flex');
@@ -482,7 +482,7 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simRowLines').style.display = 'table-row';
     document.getElementById('simRowParagraphs').style.display = 'table-row';
     document.getElementById('simRowSlides').style.display = 'none';
-    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Word > Informácie';
+    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Word > Info';
     document.getElementById('simOfficePagesRow').style.display = 'table-row';
     document.getElementById('simOfficeWordsRow').style.display = 'table-row';
   } else if (type === 'pptx') {
@@ -496,11 +496,11 @@ function applyDocumentTypeContext(type) {
     if (brandIconExcel) brandIconExcel.style.display = 'none';
     if (brandIconPpt) brandIconPpt.style.display = 'block';
 
-    document.title = `SlideProps Studio - ${currentFileInfo.name || 'Prezentácia.pptx'}`;
+    document.title = `SlideProps Studio - ${currentFileInfo.name || 'presentation.pptx'}`;
 
-    if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika snímkov';
-    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Metrika prezentácie & Snímky (PowerPoint)';
-    if (sumScopeLabel) sumScopeLabel.textContent = 'POČET SNÍMKOV';
+    if (navMetricsTitle) navMetricsTitle.textContent = 'Slide Metrics';
+    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Presentation Metrics & Slides (PowerPoint)';
+    if (sumScopeLabel) sumScopeLabel.textContent = 'SLIDE COUNT';
     if (sumRevWrap) sumRevWrap.style.display = 'flex';
 
     wordFields.forEach(el => el.style.display = 'none');
@@ -514,7 +514,7 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simRowLines').style.display = 'none';
     document.getElementById('simRowParagraphs').style.display = 'none';
     document.getElementById('simRowSlides').style.display = 'table-row';
-    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft PowerPoint > Informácie';
+    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft PowerPoint > Info';
     document.getElementById('simOfficePagesRow').style.display = 'none';
     document.getElementById('simOfficeWordsRow').style.display = 'none';
   } else if (type === 'xlsx') {
@@ -528,11 +528,11 @@ function applyDocumentTypeContext(type) {
     if (brandIconExcel) brandIconExcel.style.display = 'block';
     if (brandIconPpt) brandIconPpt.style.display = 'none';
 
-    document.title = `ExcelProps Studio - ${currentFileInfo.name || 'Zošit.xlsx'}`;
+    document.title = `ExcelProps Studio - ${currentFileInfo.name || 'workbook.xlsx'}`;
 
-    if (navMetricsTitle) navMetricsTitle.textContent = 'Metrika zošita';
-    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Vlastnosti zošita (Excel)';
-    if (sumScopeLabel) sumScopeLabel.textContent = 'TYP ZOŠITA';
+    if (navMetricsTitle) navMetricsTitle.textContent = 'Workbook Metrics';
+    if (secMetricsHeaderTitle) secMetricsHeaderTitle.textContent = 'Workbook Properties (Excel)';
+    if (sumScopeLabel) sumScopeLabel.textContent = 'WORKBOOK TYPE';
     if (sumRevWrap) sumRevWrap.style.display = 'none';
 
     wordFields.forEach(el => el.style.display = 'none');
@@ -546,7 +546,7 @@ function applyDocumentTypeContext(type) {
     document.getElementById('simRowLines').style.display = 'none';
     document.getElementById('simRowParagraphs').style.display = 'none';
     document.getElementById('simRowSlides').style.display = 'none';
-    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Excel > Informácie';
+    document.getElementById('simOfficeAppTitle').textContent = 'Microsoft Excel > Info';
     document.getElementById('simOfficePagesRow').style.display = 'none';
     document.getElementById('simOfficeWordsRow').style.display = 'none';
   }
@@ -558,7 +558,7 @@ function applyDocumentTypeContext(type) {
 }
 
 function updateDocumentMetadataHeader() {
-  const name = currentFileInfo.name || 'dokument.docx';
+  const name = currentFileInfo.name || 'document.docx';
   const size = currentFileInfo.size || 0;
   const ext = name.split('.').pop().toUpperCase();
 
@@ -589,7 +589,7 @@ function updateDocumentMetadataHeader() {
   } else {
     topTypeBadge.classList.add('generic');
     topTypeBadge.textContent = ext;
-    packageFormat.textContent = 'OpenXML Archív';
+    packageFormat.textContent = 'OpenXML Package';
   }
 }
 
@@ -683,7 +683,7 @@ function populateForm() {
 }
 
 function updateSummaryBanner() {
-  const author = getVal('fCreator') || '(neuvedený)';
+  const author = getVal('fCreator') || '(not set)';
   const totalTime = parseInt(getVal('fTotalTimeExact') || '0', 10);
   const rev = getVal('fRevision') || '1';
   const words = getVal('fWords') || '0';
@@ -695,11 +695,11 @@ function updateSummaryBanner() {
   document.getElementById('sumRevision').textContent = `Rev. ${rev}`;
 
   if (currentFileInfo.type === 'word') {
-    document.getElementById('sumScope').textContent = `${Number(words).toLocaleString()} slov / ${pages} strán`;
+    document.getElementById('sumScope').textContent = `${Number(words).toLocaleString()} words / ${pages} pages`;
   } else if (currentFileInfo.type === 'pptx') {
-    document.getElementById('sumScope').textContent = `${slides} snímkov`;
+    document.getElementById('sumScope').textContent = `${slides} slides`;
   } else if (currentFileInfo.type === 'xlsx') {
-    document.getElementById('sumScope').textContent = `Tabuľka (XLSX)`;
+    document.getElementById('sumScope').textContent = `Spreadsheet (XLSX)`;
   }
 }
 
@@ -806,7 +806,7 @@ function initEvents() {
     ['input', 'change'].forEach(ev => {
       input.addEventListener(ev, () => {
         syncFormToXmlDocs();
-        setStatus(false, 'Máte neuložené zmeny');
+        setStatus(false, 'Unsaved changes');
       });
     });
   });
@@ -875,7 +875,7 @@ function initEvents() {
   document.getElementById('btnPrettifyXmlCode').addEventListener('click', () => {
     const editor = document.getElementById('xmlCodeEditor');
     editor.value = formatXml(editor.value);
-    showToastNotice('XML kód bol zarovnaný.');
+    showToastNotice('XML code formatted.');
   });
 
   document.getElementById('btnSaveXmlCode').addEventListener('click', () => {
@@ -920,19 +920,19 @@ function setTotalMinutes(minutes, triggerSync = true) {
   document.getElementById('fTotalTimeExact').value = m;
   document.getElementById('fTotalTimeRange').value = Math.min(m, 2400);
   document.getElementById('timingLargeDisplay').textContent = `${m} min`;
-  document.getElementById('timingHumanConverted').textContent = `Zodpovedá: ${formatMinutesToHuman(m)}`;
+  document.getElementById('timingHumanConverted').textContent = `Equivalent: ${formatMinutesToHuman(m)}`;
   
   if (triggerSync) {
     syncFormToXmlDocs();
-    setStatus(false, 'Máte neuložené zmeny');
+    setStatus(false, 'Unsaved changes');
   }
 }
 
 function formatMinutesToHuman(m) {
-  if (m <= 0) return '0 hodín 0 minút';
+  if (m <= 0) return '0 hours 0 minutes';
   const hours = Math.floor(m / 60);
   const remaining = m % 60;
-  return `${hours} hodín ${remaining} minút`;
+  return `${hours} hours ${remaining} minutes`;
 }
 
 function formatMinutesToShort(m) {
@@ -951,7 +951,7 @@ function stepWords(delta) {
   el.value = Math.max(0, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Máte neuložené zmeny');
+  setStatus(false, 'Unsaved changes');
 }
 
 function stepPages(delta) {
@@ -960,7 +960,7 @@ function stepPages(delta) {
   el.value = Math.max(0, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Máte neuložené zmeny');
+  setStatus(false, 'Unsaved changes');
 }
 
 function stepSlides(delta) {
@@ -969,7 +969,7 @@ function stepSlides(delta) {
   el.value = Math.max(0, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Máte neuložené zmeny');
+  setStatus(false, 'Unsaved changes');
 }
 
 function stepRevision(delta) {
@@ -978,7 +978,7 @@ function stepRevision(delta) {
   el.value = Math.max(1, current + delta);
   pulseElement(el);
   syncFormToXmlDocs();
-  setStatus(false, 'Máte neuložené zmeny');
+  setStatus(false, 'Unsaved changes');
 }
 
 function pulseElement(el) {
@@ -999,8 +999,8 @@ function actionSanitize() {
   setVal('fTemplate', 'Normal.dotm');
 
   syncFormToXmlDocs();
-  setStatus(false, 'Metadáta anonymizované');
-  showToastNotice('Osobné identifikačné údaje a názov šablóny boli odstránené.');
+  setStatus(false, 'Metadata anonymized');
+  showToastNotice('Author, editor, and personal traces removed.');
 }
 
 function actionSyncDates() {
@@ -1015,15 +1015,15 @@ function actionSyncDates() {
     setVal('fModified', isoNow);
   }
   syncFormToXmlDocs();
-  setStatus(false, 'Dátumy zosúladené');
-  showToastNotice('Dátum úpravy bol nastavený zhodne s dátumom vytvorenia.');
+  setStatus(false, 'Timestamps synced');
+  showToastNotice('Last modified timestamp matched with creation timestamp.');
 }
 
 function actionClearTemplate() {
   setVal('fTemplate', 'Normal.dotm');
   syncFormToXmlDocs();
-  setStatus(false, 'Šablóna očistená');
-  showToastNotice('Cesta k šablóne bola resetovaná na čistý súbor Normal.dotm.');
+  setStatus(false, 'Template path cleaned');
+  showToastNotice('Template path reset to clean Normal.dotm.');
 }
 
 function serializeXmlCleanly(doc) {
@@ -1084,8 +1084,8 @@ async function saveDocumentDirectly() {
       saveSnapshot();
       updateDiffSummary();
       updateLiveSimulators();
-      setStatus(true, 'Uložené na disk');
-      showToastNotice(`Zmeny boli úspešne uložené do: ${currentFileInfo.name}`);
+      setStatus(true, 'Saved to disk');
+      showToastNotice(`Changes saved successfully to: ${currentFileInfo.name}`);
       pulseElement(document.getElementById('btnSaveDirect'));
       return;
     }
@@ -1100,11 +1100,11 @@ async function exportDocumentCopy() {
   const blob = await prepareZipPackageForSaving();
   if (!blob) return;
 
-  const origName = currentFileInfo.name || 'dokument.docx';
+  const origName = currentFileInfo.name || 'document.docx';
   const dotIdx = origName.lastIndexOf('.');
   const base = dotIdx !== -1 ? origName.substring(0, dotIdx) : origName;
   const ext = dotIdx !== -1 ? origName.substring(dotIdx) : '.docx';
-  const exportName = `${base}_upravene${ext}`;
+  const exportName = `${base}_modified${ext}`;
 
   if (window.electronAPI) {
     const arrayBuf = await blob.arrayBuffer();
@@ -1114,8 +1114,8 @@ async function exportDocumentCopy() {
       saveSnapshot();
       updateDiffSummary();
       updateLiveSimulators();
-      setStatus(true, 'Kópia uložená na disk');
-      showToastNotice(`Kópia bola úspešne uložená: ${result.savedPath}`);
+      setStatus(true, 'Copy saved to disk');
+      showToastNotice(`Copy saved successfully: ${result.savedPath}`);
       pulseElement(document.getElementById('btnExportCopy'));
     }
   } else {
@@ -1132,13 +1132,13 @@ async function exportDocumentCopy() {
     saveSnapshot();
     updateDiffSummary();
     updateLiveSimulators();
-    setStatus(true, 'Stiahnuté');
-    showToastNotice(`Súbor '${exportName}' bol stiahnutý.`);
+    setStatus(true, 'Downloaded');
+    showToastNotice(`File '${exportName}' downloaded successfully.`);
   }
 }
 
 // -----------------------------------------------------------------------------
-// Live Simulator Engine (Prieskumník Windows & MS Office)
+// Live Simulator Engine (Windows Explorer & MS Office)
 // -----------------------------------------------------------------------------
 function updateLiveSimulators() {
   const title = getVal('fTitle') || '-';
@@ -1172,7 +1172,7 @@ function updateLiveSimulators() {
   setSimField('simCompany', company, originalSnapshot.company);
   setSimField('simManager', manager, originalSnapshot.manager);
 
-  setSimField('simTotalTime', `${totalMin} minút`, `${originalSnapshot.totalTime || 0} minút`);
+  setSimField('simTotalTime', `${totalMin} minutes`, `${originalSnapshot.totalTime || 0} minutes`);
   setSimField('simPages', pages, originalSnapshot.pages);
   setSimField('simWords', words, originalSnapshot.words);
   setSimField('simCharacters', chars, originalSnapshot.characters);
@@ -1181,8 +1181,8 @@ function updateLiveSimulators() {
   setSimField('simSlides', slides, originalSnapshot.slides);
 
   // 2. MS Office Backstage View
-  document.getElementById('simOfficeDocName').textContent = currentFileInfo.name || 'dokument.docx';
-  document.getElementById('simOfficeDocPath').textContent = currentFileInfo.path || `C:\\Users\\User\\Documents\\${currentFileInfo.name || 'dokument.docx'}`;
+  document.getElementById('simOfficeDocName').textContent = currentFileInfo.name || 'document.docx';
+  document.getElementById('simOfficeDocPath').textContent = currentFileInfo.path || `C:\\Users\\User\\Documents\\${currentFileInfo.name || 'document.docx'}`;
   document.getElementById('simOfficeSize').textContent = formatBytes(currentFileInfo.size || 0);
 
   setSimField('simOfficePages', pages, originalSnapshot.pages);
@@ -1248,28 +1248,28 @@ function updateDiffSummary() {
   if (!diffList || !counter) return;
 
   const fieldLabels = {
-    creator: 'Autor (Creator)',
-    lastModifiedBy: 'Posledný editor',
-    title: 'Názov dokumentu',
-    subject: 'Predmet',
-    keywords: 'Kľúčové slová',
-    category: 'Kategória',
-    contentStatus: 'Stav obsahu',
-    description: 'Popis',
-    revision: 'Číslo revízie',
-    created: 'Dátum vytvorenia',
-    modified: 'Dátum úpravy',
-    totalTime: 'Celkový čas úprav (min)',
-    words: 'Počet slov',
-    pages: 'Počet strán',
-    characters: 'Počet znakov',
-    charactersWithSpaces: 'Znakov s medzerami',
-    paragraphs: 'Počet odsekov',
-    lines: 'Počet riadkov',
-    slides: 'Počet snímkov',
-    company: 'Spoločnosť',
-    manager: 'Manažér',
-    template: 'Šablóna'
+    creator: 'Author / Creator',
+    lastModifiedBy: 'Last Modified By',
+    title: 'Document Title',
+    subject: 'Subject',
+    keywords: 'Keywords',
+    category: 'Category',
+    contentStatus: 'Content Status',
+    description: 'Description',
+    revision: 'Revision Number',
+    created: 'Created Timestamp',
+    modified: 'Modified Timestamp',
+    totalTime: 'Total Editing Time (min)',
+    words: 'Word Count',
+    pages: 'Page Count',
+    characters: 'Character Count',
+    charactersWithSpaces: 'Characters (with spaces)',
+    paragraphs: 'Paragraph Count',
+    lines: 'Line Count',
+    slides: 'Slide Count',
+    company: 'Company',
+    manager: 'Manager',
+    template: 'Template Path'
   };
 
   const currentValues = {
@@ -1304,8 +1304,8 @@ function updateDiffSummary() {
     if (oldVal !== newVal) {
       diffs.push({
         label: fieldLabels[key] || key,
-        old: oldVal || '(prázdne)',
-        new: newVal || '(odstránené)'
+        old: oldVal || '(empty)',
+        new: newVal || '(removed)'
       });
     }
   }
@@ -1313,8 +1313,8 @@ function updateDiffSummary() {
   counter.textContent = diffs.length;
 
   if (diffs.length === 0) {
-    diffList.innerHTML = '<div class="empty-diff-text">Zatiaľ neboli vykonané žiadne zmeny oproti načítanému súboru.</div>';
-    setStatus(true, 'Pripravené');
+    diffList.innerHTML = '<div class="empty-diff-text">No pending changes made yet.</div>';
+    setStatus(true, 'Ready');
   } else {
     diffList.innerHTML = diffs.map(d => `
       <div class="diff-row">
@@ -1323,7 +1323,7 @@ function updateDiffSummary() {
         <div class="diff-val-new">→ ${escapeHtml(d.new)}</div>
       </div>
     `).join('');
-    setStatus(false, `${diffs.length} neuložených zmien`);
+    setStatus(false, `${diffs.length} unsaved change${diffs.length === 1 ? '' : 's'}`);
   }
 }
 
@@ -1354,7 +1354,7 @@ function renderCustomPropertiesTable() {
   }
 
   if (customList.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" class="empty-diff-text">Žiadne vlastné atribúty nie sú definované.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-diff-text">No custom properties defined.</td></tr>';
     return;
   }
 
@@ -1380,7 +1380,7 @@ function addNewCustomProperty() {
   const val = valInput.value.trim();
 
   if (!name) {
-    alert('Zadajte názov atribútu.');
+    alert('Please enter a property name.');
     return;
   }
 
@@ -1403,8 +1403,8 @@ function addNewCustomProperty() {
   nameInput.value = '';
   valInput.value = '';
   renderCustomPropertiesTable();
-  setStatus(false, 'Pridaný vlastný atribút');
-  showToastNotice(`Vlastný atribút '${name}' bol pridaný.`);
+  setStatus(false, 'Custom property added');
+  showToastNotice(`Custom property '${name}' added.`);
 }
 
 window.deleteCustomProperty = function(propName) {
@@ -1417,8 +1417,8 @@ window.deleteCustomProperty = function(propName) {
     }
   }
   renderCustomPropertiesTable();
-  setStatus(false, 'Odstránený vlastný atribút');
-  showToastNotice(`Vlastný atribút '${propName}' bol vymazaný.`);
+  setStatus(false, 'Custom property removed');
+  showToastNotice(`Custom property '${propName}' removed.`);
 };
 
 // -----------------------------------------------------------------------------
@@ -1487,8 +1487,8 @@ async function saveXmlCodeEditorContent() {
     renderCustomPropertiesTable();
   }
 
-  setStatus(false, 'XML súbor upravený');
-  showToastNotice(`Zmeny v '${filename}' boli zapísané.`);
+  setStatus(false, 'XML part updated');
+  showToastNotice(`Changes to '${filename}' applied in memory.`);
 }
 
 // -----------------------------------------------------------------------------
@@ -1519,17 +1519,17 @@ async function loadSampleDiplomovka() {
                    xmlns:dcterms="http://purl.org/dc/terms/" 
                    xmlns:dcmitype="http://purl.org/dc/dcmitype/" 
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <dc:title>Diplomová práca - Analýza trhových anomálií</dc:title>
-    <dc:subject>Aplikovaná ekonometria</dc:subject>
-    <dc:creator>Ján Novák</dc:creator>
-    <cp:keywords>analýza, ekonometria, modelovanie, dáta</cp:keywords>
-    <dc:description>Záverečná diplomová práca pre obhajobu.</dc:description>
-    <cp:lastModifiedBy>Ján Novák</cp:lastModifiedBy>
+    <dc:title>Quarterly Market Anomaly Analysis</dc:title>
+    <dc:subject>Applied Econometrics</dc:subject>
+    <dc:creator>John Doe</dc:creator>
+    <cp:keywords>analysis, econometrics, modeling, data</cp:keywords>
+    <dc:description>Final research paper prepared for academic review.</dc:description>
+    <cp:lastModifiedBy>John Doe</cp:lastModifiedBy>
     <cp:revision>24</cp:revision>
     <dcterms:created xsi:type="dcterms:W3CDTF">2025-10-15T08:30:00Z</dcterms:created>
     <dcterms:modified xsi:type="dcterms:W3CDTF">2026-02-28T16:45:00Z</dcterms:modified>
-    <cp:category>Záverečné práce</cp:category>
-    <cp:contentStatus>Finálna verzia</cp:contentStatus>
+    <cp:category>Research Papers</cp:category>
+    <cp:contentStatus>Final</cp:contentStatus>
 </cp:coreProperties>`);
 
   sampleZip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -1544,22 +1544,22 @@ async function loadSampleDiplomovka() {
     <Lines>1450</Lines>
     <Paragraphs>420</Paragraphs>
     <ScaleCrop>false</ScaleCrop>
-    <Company>Technická Univerzita</Company>
-    <Manager>Prof. Ing. Martin Kováč, DrSc.</Manager>
+    <Company>Institute of Technology</Company>
+    <Manager>Prof. Martin Smith, Ph.D.</Manager>
     <CharactersWithSpaces>104200</CharactersWithSpaces>
     <AppVersion>16.0000</AppVersion>
 </Properties>`);
 
   sampleZip.file('docProps/custom.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
-    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Interné Číslo"><vt:lpwstr>INT-2026-DOC-042</vt:lpwstr></property>
-    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Dôvernosť"><vt:lpwstr>Prísne tajné</vt:lpwstr></property>
+    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="InternalID"><vt:lpwstr>INT-2026-DOC-042</vt:lpwstr></property>
+    <property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Confidentiality"><vt:lpwstr>Strictly Confidential</vt:lpwstr></property>
 </Properties>`);
 
   const blob = await sampleZip.generateAsync({ type: 'blob' });
   const buf = await blob.arrayBuffer();
 
-  loadFromBinaryBuffer(buf, 'Vzorova_diplomovka.docx', buf.byteLength, 'Vzorova_diplomovka.docx');
+  loadFromBinaryBuffer(buf, 'Sample_Research_Paper.docx', buf.byteLength, 'Sample_Research_Paper.docx');
 }
 
 // -----------------------------------------------------------------------------
@@ -1614,7 +1614,7 @@ function formatDatetimeHuman(isoOrLocal) {
   try {
     const d = new Date(isoOrLocal);
     if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('sk-SK') + ' ' + d.toLocaleTimeString('sk-SK', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('en-US') + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   } catch {
     return '-';
   }
@@ -1651,19 +1651,19 @@ function setStatus(isSynced, text) {
     if (topDot) topDot.className = 'status-beacon-core synced';
     if (topCapsule) {
       topCapsule.className = 'status-indicator-badge synced';
-      topCapsule.title = 'Všetky zmeny sú synchronizované s archívom';
+      topCapsule.title = 'All changes are synchronized with the package';
     }
     if (topLabel) topLabel.textContent = 'SYNC';
-    if (txt) txt.textContent = text || 'Pripravené';
+    if (txt) txt.textContent = text || 'Ready';
   } else {
     if (bullet) bullet.className = 'status-dot dirty';
     if (topDot) topDot.className = 'status-beacon-core dirty';
     if (topCapsule) {
       topCapsule.className = 'status-indicator-badge dirty';
-      topCapsule.title = 'Máte neuložené zmeny v atribútoch';
+      topCapsule.title = 'Unsaved changes in document properties';
     }
-    if (topLabel) topLabel.textContent = 'ZMENY';
-    if (txt) txt.textContent = text || 'Máte neuložené zmeny';
+    if (topLabel) topLabel.textContent = 'DIRTY';
+    if (txt) txt.textContent = text || 'Unsaved changes';
   }
 }
 

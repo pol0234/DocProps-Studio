@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Office OpenXML Metadata CLI Editor (DOCX, PPTX, XLSX)
-Umožňuje prehliadať, upravovať a anonymizovať metadáta Office súborov priamo z príkazového riadka.
-Používa výhradne štandardnú knižnicu Pythonu (zipfile, xml.etree.ElementTree).
+Inspect, edit, and anonymize Office file metadata directly from the command line.
+Uses strictly the Python standard library (zipfile, xml.etree.ElementTree).
 """
 
 import sys
@@ -28,15 +28,15 @@ for prefix, uri in NAMESPACES.items():
     ET.register_namespace(prefix, uri)
 
 def inspect_file(filepath):
-    """Zobrazí všetky nájdené metadáta v prehľadnej tabuľke."""
+    """Displays all extracted metadata in a formatted table."""
     if not os.path.exists(filepath):
-        print(f"Chyba: Súbor '{filepath}' neexistuje.")
+        print(f"Error: File '{filepath}' does not exist.")
         return
 
     print(f"\n=======================================================")
-    print(f" Analýza metadát súboru: {os.path.basename(filepath)}")
-    print(f" Cesta: {os.path.abspath(filepath)}")
-    print(f" Veľkosť: {os.path.getsize(filepath):,} bajtov")
+    print(f" Document Metadata Analysis: {os.path.basename(filepath)}")
+    print(f" Path: {os.path.abspath(filepath)}")
+    print(f" Size: {os.path.getsize(filepath):,} bytes")
     print(f"=======================================================\n")
 
     with zipfile.ZipFile(filepath, 'r') as z:
@@ -44,49 +44,49 @@ def inspect_file(filepath):
 
         # Core Properties
         if 'docProps/core.xml' in filelist:
-            print("--- [Základné vlastnosti (docProps/core.xml)] ---")
+            print("--- [Core Properties (docProps/core.xml)] ---")
             root = ET.fromstring(z.read('docProps/core.xml'))
             tags = [
-                ('Názov (Title)', '{http://purl.org/dc/elements/1.1/}title'),
-                ('Predmet (Subject)', '{http://purl.org/dc/elements/1.1/}subject'),
-                ('Autor / Vytvoril (Creator)', '{http://purl.org/dc/elements/1.1/}creator'),
-                ('Kľúčové slová (Keywords)', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}keywords'),
-                ('Popis (Description)', '{http://purl.org/dc/elements/1.1/}description'),
-                ('Posledný editor (LastModifiedBy)', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}lastModifiedBy'),
-                ('Číslo revízie (Revision)', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}revision'),
-                ('Dátum vytvorenia (Created)', '{http://purl.org/dc/terms/}created'),
-                ('Dátum úpravy (Modified)', '{http://purl.org/dc/terms/}modified'),
-                ('Kategória (Category)', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}category'),
-                ('Stav obsahu (ContentStatus)', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}contentStatus'),
+                ('Title', '{http://purl.org/dc/elements/1.1/}title'),
+                ('Subject', '{http://purl.org/dc/elements/1.1/}subject'),
+                ('Author / Creator', '{http://purl.org/dc/elements/1.1/}creator'),
+                ('Keywords / Tags', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}keywords'),
+                ('Description / Comments', '{http://purl.org/dc/elements/1.1/}description'),
+                ('Last Modified By', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}lastModifiedBy'),
+                ('Revision Number', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}revision'),
+                ('Created Timestamp', '{http://purl.org/dc/terms/}created'),
+                ('Modified Timestamp', '{http://purl.org/dc/terms/}modified'),
+                ('Category', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}category'),
+                ('Content Status', '{http://schemas.openxmlformats.org/package/2006/metadata/core-properties}contentStatus'),
             ]
             for label, tag in tags:
                 elem = root.find(tag)
-                val = elem.text if (elem is not None and elem.text) else '(nevyplnené)'
+                val = elem.text if (elem is not None and elem.text) else '(not set)'
                 print(f"  {label:<32}: {val}")
             print()
 
         # Extended Properties
         if 'docProps/app.xml' in filelist:
-            print("--- [Rozšírené vlastnosti (docProps/app.xml)] ---")
+            print("--- [Extended Properties (docProps/app.xml)] ---")
             root = ET.fromstring(z.read('docProps/app.xml'))
             ns_uri = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"
             app_tags = [
-                ('Celkový čas úprav (TotalTime)', 'TotalTime', ' minút'),
-                ('Aplikácia (Application)', 'Application', ''),
-                ('Verzia aplikácie (AppVersion)', 'AppVersion', ''),
-                ('Spoločnosť (Company)', 'Company', ''),
-                ('Manažér (Manager)', 'Manager', ''),
-                ('Šablóna (Template)', 'Template', ''),
-                ('Počet strán (Pages)', 'Pages', ''),
-                ('Počet slov (Words)', 'Words', ''),
-                ('Počet znakov (Characters)', 'Characters', ''),
-                ('Znakov s medzerami', 'CharactersWithSpaces', ''),
-                ('Počet riadkov (Lines)', 'Lines', ''),
-                ('Počet odsekov (Paragraphs)', 'Paragraphs', ''),
-                ('Počet snímkov (Slides)', 'Slides', ''),
-                ('Počet poznámok (Notes)', 'Notes', ''),
-                ('Skryté snímky (HiddenSlides)', 'HiddenSlides', ''),
-                ('Formát prezentácie', 'PresentationFormat', ''),
+                ('Total Editing Time', 'TotalTime', ' min'),
+                ('Application', 'Application', ''),
+                ('App Version', 'AppVersion', ''),
+                ('Company', 'Company', ''),
+                ('Manager', 'Manager', ''),
+                ('Template', 'Template', ''),
+                ('Pages', 'Pages', ''),
+                ('Words', 'Words', ''),
+                ('Characters', 'Characters', ''),
+                ('Characters (with spaces)', 'CharactersWithSpaces', ''),
+                ('Lines', 'Lines', ''),
+                ('Paragraphs', 'Paragraphs', ''),
+                ('Slides', 'Slides', ''),
+                ('Notes', 'Notes', ''),
+                ('Hidden Slides', 'HiddenSlides', ''),
+                ('Presentation Format', 'PresentationFormat', ''),
             ]
             for label, tag, unit in app_tags:
                 elem = root.find(f"{{{ns_uri}}}{tag}")
@@ -98,23 +98,22 @@ def inspect_file(filepath):
 
         # Custom Properties
         if 'docProps/custom.xml' in filelist:
-            print("--- [Vlastné atribúty (docProps/custom.xml)] ---")
+            print("--- [Custom Properties (docProps/custom.xml)] ---")
             root = ET.fromstring(z.read('docProps/custom.xml'))
             props = root.findall('{http://schemas.openxmlformats.org/officeDocument/2006/custom-properties}property')
             if props:
                 for p in props:
-                    name = p.attrib.get('name', 'Neznámy')
-                    # value can be in vt:lpwstr, vt:filetime, vt:i4, etc.
+                    name = p.attrib.get('name', 'Unknown')
                     val = "".join(p.itertext()).strip()
                     print(f"  {name:<32}: {val}")
             else:
-                print("  (Žiadne vlastné atribúty)")
+                print("  (No custom properties found)")
             print()
 
 def edit_file(filepath, out_path, **kwargs):
-    """Upraví vybrané metadáta a uloží nový súbor."""
+    """Edits selected metadata attributes and saves to the output file."""
     if not os.path.exists(filepath):
-        print(f"Chyba: Vstupný súbor '{filepath}' neexistuje.")
+        print(f"Error: Target file '{filepath}' does not exist.")
         return False
 
     out_path = out_path or filepath
@@ -218,7 +217,7 @@ def edit_file(filepath, out_path, **kwargs):
         os.remove(filepath)
     os.replace(temp_out, out_path)
 
-    print(f"✓ Úspešne uložené do: {out_path}")
+    print(f"✓ Metadata saved successfully to: {out_path}")
     return True
 
 def main():
@@ -226,26 +225,26 @@ def main():
     subparsers = parser.add_subparsers(dest="cmd")
 
     # Inspect
-    inspect_parser = subparsers.add_parser("inspect", help="Zobraziť metadáta súboru")
-    inspect_parser.add_argument("file", help="Cesta k súboru DOCX / PPTX / XLSX")
+    inspect_parser = subparsers.add_parser("inspect", help="Inspect and display metadata")
+    inspect_parser.add_argument("file", help="Path to DOCX / PPTX / XLSX file")
 
     # Edit / Set
-    edit_parser = subparsers.add_parser("edit", aliases=["set"], help="Upraviť metadáta (alias: set)")
-    edit_parser.add_argument("file", help="Cesta k súboru")
-    edit_parser.add_argument("--out", help="Výstupná cesta (predvolene prepíše pôvodný)")
-    edit_parser.add_argument("--title", help="Nový názov")
-    edit_parser.add_argument("--subject", help="Nový predmet")
-    edit_parser.add_argument("--author", help="Nový autor (creator)")
-    edit_parser.add_argument("--modified-by", help="Posledný editor (lastModifiedBy)")
-    edit_parser.add_argument("--total-time", type=int, help="Celkový čas úprav v minútach (TotalTime)")
-    edit_parser.add_argument("--revision", type=int, help="Číslo revízie")
-    edit_parser.add_argument("--company", help="Názov spoločnosti")
-    edit_parser.add_argument("--manager", help="Meno manažéra")
-    edit_parser.add_argument("--template", help="Názov / cesta šablóny")
-    edit_parser.add_argument("--pages", type=int, help="Počet strán")
-    edit_parser.add_argument("--words", type=int, help="Počet slov")
-    edit_parser.add_argument("--slides", type=int, help="Počet snímkov (PPTX)")
-    edit_parser.add_argument("--anonymize", action="store_true", help="Odstrániť všetky osobné stopy (autor, firma, editor)")
+    edit_parser = subparsers.add_parser("edit", aliases=["set"], help="Edit document metadata (alias: set)")
+    edit_parser.add_argument("file", help="Path to target document file")
+    edit_parser.add_argument("--out", help="Output path (default: overwrite input file)")
+    edit_parser.add_argument("--title", help="Document title")
+    edit_parser.add_argument("--subject", help="Document subject")
+    edit_parser.add_argument("--author", help="Author / Creator name")
+    edit_parser.add_argument("--modified-by", help="Last modified by editor name")
+    edit_parser.add_argument("--total-time", type=int, help="Total editing time in minutes (TotalTime)")
+    edit_parser.add_argument("--revision", type=int, help="Revision number")
+    edit_parser.add_argument("--company", help="Company name")
+    edit_parser.add_argument("--manager", help="Manager name")
+    edit_parser.add_argument("--template", help="Template path or name")
+    edit_parser.add_argument("--pages", type=int, help="Page count")
+    edit_parser.add_argument("--words", type=int, help="Word count")
+    edit_parser.add_argument("--slides", type=int, help="Slide count (PPTX)")
+    edit_parser.add_argument("--anonymize", action="store_true", help="Remove all personal traces (author, editor, company)")
 
     args = parser.parse_args()
 

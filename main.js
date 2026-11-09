@@ -73,10 +73,11 @@ ipcMain.handle('theme:set', (event, theme) => {
 
 ipcMain.handle('dialog:openFile', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Open Office Document',
     properties: ['openFile'],
     filters: [
-      { name: 'Office Dokumenty (*.docx, *.pptx, *.xlsx)', extensions: ['docx', 'pptx', 'xlsx', 'dotx', 'potx', 'xltx', 'docm', 'pptm', 'xlsm'] },
-      { name: 'Všetky súbory', extensions: ['*'] }
+      { name: 'Office Documents (*.docx, *.pptx, *.xlsx)', extensions: ['docx', 'pptx', 'xlsx', 'dotx', 'potx', 'xltx', 'docm', 'pptm', 'xlsm'] },
+      { name: 'All Files (*.*)', extensions: ['*'] }
     ]
   });
 
@@ -111,12 +112,13 @@ ipcMain.handle('file:readFromPath', async (event, filePath) => {
 });
 
 ipcMain.handle('dialog:saveFile', async (event, payload) => {
-  if (!payload || !payload.bufferData) return { success: false, error: 'Neplatné dáta' };
-  const defaultName = typeof payload.defaultName === 'string' ? path.basename(payload.defaultName) : 'dokument.docx';
+  if (!payload || !payload.bufferData) return { success: false, error: 'Invalid data' };
+  const defaultName = typeof payload.defaultName === 'string' ? path.basename(payload.defaultName) : 'document.docx';
   const result = await dialog.showSaveDialog(mainWindow, {
+    title: 'Save Modified Document',
     defaultPath: defaultName,
     filters: [
-      { name: 'Office Dokument', extensions: [defaultName.split('.').pop() || 'docx'] }
+      { name: 'Office Document', extensions: [defaultName.split('.').pop() || 'docx'] }
     ]
   });
 
@@ -135,10 +137,10 @@ ipcMain.handle('dialog:saveFile', async (event, payload) => {
 
 ipcMain.handle('file:saveDirect', async (event, payload) => {
   if (!payload || !payload.filePath || typeof payload.filePath !== 'string' || !payload.bufferData) {
-    return { success: false, error: 'Neplatné vstupné parametre' };
+    return { success: false, error: 'Invalid input parameters' };
   }
   if (!path.isAbsolute(payload.filePath)) {
-    return { success: false, error: 'Vyžaduje sa absolútna cesta' };
+    return { success: false, error: 'Absolute path required' };
   }
   try {
     const buffer = Buffer.from(payload.bufferData);

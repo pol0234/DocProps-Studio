@@ -9,14 +9,14 @@ async function createTempOfficeFile(type, fileName) {
   zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"></Types>');
   zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
-  <dc:title>Testovaci ${type.toUpperCase()}</dc:title>
-  <dc:creator>Testovaci Autor</dc:creator>
+  <dc:title>Test ${type.toUpperCase()}</dc:title>
+  <dc:creator>Test Author</dc:creator>
 </cp:coreProperties>`);
   zip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">
   <TotalTime>45</TotalTime>
   <Application>Microsoft ${type === 'xlsx' ? 'Excel' : 'PowerPoint'}</Application>
-  <Company>Testovacia Firma</Company>
+  <Company>Test Organization</Company>
 </Properties>`);
 
   const buf = await zip.generateAsync({ type: 'nodebuffer' });
@@ -26,7 +26,7 @@ async function createTempOfficeFile(type, fileName) {
 }
 
 (async () => {
-  console.log('=== SPUSTENIE E2E OVERENIA S CHROMIUM ===');
+  console.log('=== STARTING E2E CHROMIUM VERIFICATION ===');
 
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
   const page = await browser.newPage();
@@ -35,86 +35,86 @@ async function createTempOfficeFile(type, fileName) {
   page.on('pageerror', err => console.error('  [BROWSER ERROR]', err.message));
 
   const indexPath = 'file://' + path.resolve('index.html').replace(/\\/g, '/');
-  console.log('1. Navigácia na aplikáciu:', indexPath);
+  console.log('1. Navigating to application:', indexPath);
   await page.goto(indexPath);
 
-  // 2. Kliknutie na vzorový dokument
-  console.log('2. Otváram vzorový dokument...');
+  // 2. Open sample document
+  console.log('2. Opening sample document...');
   await page.click('#btnOpenSampleHero');
   await page.waitForTimeout(400);
 
-  // 3. Kontrola načítaných hodnôt
+  // 3. Verify initial loaded values
   const creator = await page.inputValue('#fCreator');
   const title = await page.inputValue('#fTitle');
   const words = await page.inputValue('#fWords');
   const totalTime = await page.inputValue('#fTotalTimeExact');
   const rev = await page.inputValue('#fRevision');
 
-  console.log('   Pôvodné hodnoty:');
-  console.log(`   - Autor: "${creator}" (očakáva sa "Ján Novák")`);
-  console.log(`   - Názov: "${title}"`);
-  console.log(`   - Slová: "${words}" (očakáva sa "14250")`);
-  console.log(`   - Čas: "${totalTime}" minút (očakáva sa "540")`);
-  console.log(`   - Revízia: "${rev}" (očakáva sa "24")`);
+  console.log('   Initial values:');
+  console.log(`   - Author: "${creator}" (expected "John Doe")`);
+  console.log(`   - Title: "${title}"`);
+  console.log(`   - Words: "${words}" (expected "14250")`);
+  console.log(`   - Time: "${totalTime}" minutes (expected "540")`);
+  console.log(`   - Revision: "${rev}" (expected "24")`);
 
-  if (creator !== 'Ján Novák' || words !== '14250' || totalTime !== '540') {
-    throw new Error('Počiatočné hodnoty neboli načítané správne!');
+  if (creator !== 'John Doe' || words !== '14250' || totalTime !== '540') {
+    throw new Error('Initial sample document values were not loaded correctly!');
   }
 
-  // 4. Úprava hodnôt (Simulácia písania používateľom)
-  console.log('3. Úprava atribútov...');
-  await page.fill('#fCreator', 'Dr. Ing. Martin Craft');
-  await page.fill('#fTitle', 'Revolučný redizajn OpenXML metadát');
+  // 4. Modify attributes (Simulate user typing)
+  console.log('3. Modifying attributes...');
+  await page.fill('#fCreator', 'Dr. Martin Craft');
+  await page.fill('#fTitle', 'OpenXML Metadata Redesign');
 
-  // Prepnutie na záložku Čas & Revízie
-  console.log('4. Prepnutie na záložku Čas & Revízie...');
+  // Switch to Time & Revisions tab
+  console.log('4. Switching to Time & Revisions tab...');
   await page.click('button[data-section="secTiming"]');
   await page.waitForTimeout(200);
 
-  // Zmena TotalTime cez slider a presné pole
+  // Update TotalTime and Revision
   await page.fill('#fTotalTimeExact', '720');
   await page.fill('#fRevision', '30');
 
-  // Prepnutie na záložku Metrika obsahu
-  console.log('5. Prepnutie na záložku Metrika obsahu...');
+  // Switch to Content Metrics tab
+  console.log('5. Switching to Content Metrics tab...');
   await page.click('button[data-section="secMetrics"]');
   await page.waitForTimeout(200);
 
-  // Zmena počtu slov a strán
+  // Update words, pages, and company
   await page.fill('#fWords', '28500');
   await page.fill('#fPages', '64');
-  await page.fill('#fCompany', 'Slovenská Technická Akadémia');
+  await page.fill('#fCompany', 'National Technology Academy');
 
-  // 5. Overenie horného summary banneru
+  // 5. Verify top summary banner updates
   const sumAuthor = await page.textContent('#sumAuthor');
   const sumTime = await page.textContent('#sumTime');
   const sumRev = await page.textContent('#sumRevision');
   const sumScope = await page.textContent('#sumScope');
 
-  console.log('   Aktualizovaný prehľad v hornom banneri:');
-  console.log(`   - Autor: ${sumAuthor}`);
-  console.log(`   - Čas: ${sumTime}`);
-  console.log(`   - Revízia: ${sumRev}`);
-  console.log(`   - Rozsah: ${sumScope}`);
+  console.log('   Updated summary banner values:');
+  console.log(`   - Author: ${sumAuthor}`);
+  console.log(`   - Time: ${sumTime}`);
+  console.log(`   - Revision: ${sumRev}`);
+  console.log(`   - Scope: ${sumScope}`);
 
   if (!sumAuthor.includes('Martin Craft') || !sumTime.includes('12h') || !sumRev.includes('30')) {
-    throw new Error('Horný prehľadový banner sa neaktualizoval v reálnom čase!');
+    throw new Error('Top summary banner did not update in real-time!');
   }
 
-  // 6. Overenie simulátora
-  console.log('6. Prepnutie na záložku Živý simulátor...');
+  // 6. Verify Live Simulator updates
+  console.log('6. Switching to Live Simulator tab...');
   await page.click('button[data-section="secSimulator"]');
   await page.waitForTimeout(200);
 
   const simAuthor = await page.textContent('#simAuthors');
   const simWords = await page.textContent('#simWords');
-  console.log(`   Simulátor Prieskumníka - Autor: "${simAuthor}", Slová: "${simWords}"`);
+  console.log(`   Explorer Simulator - Author: "${simAuthor}", Words: "${simWords}"`);
   if (!simAuthor.includes('Martin Craft') || !simWords.includes('28500')) {
-    throw new Error('Simulátor Prieskumníka neodráža zmeny!');
+    throw new Error('Explorer simulator does not reflect attribute changes!');
   }
 
-  // 7. Vygenerovanie a stiahnutie balíka priamo z vnútra stránky
-  console.log('7. Ukladanie a generovanie upraveného OpenXML balíka...');
+  // 7. Generate and save OpenXML package from inside renderer
+  console.log('7. Packaging and saving modified OpenXML package...');
   const base64Zip = await page.evaluate(async () => {
     const blob = await prepareZipPackageForSaving();
     const reader = new FileReader();
@@ -127,43 +127,43 @@ async function createTempOfficeFile(type, fileName) {
   const zipBuffer = Buffer.from(base64Zip, 'base64');
   const outputPath = 'test_e2e_verified.docx';
   fs.writeFileSync(outputPath, zipBuffer);
-  console.log(`   Vygenerovaný súbor: ${outputPath} (${zipBuffer.length} bajtov)`);
+  console.log(`   Generated file: ${outputPath} (${zipBuffer.length} bytes)`);
 
-  // 8. Fyzické overenie obsahu výsledného archívu cez JSZip
+  // 8. Physical XML package verification with JSZip
   const verifiedZip = await JSZip.loadAsync(zipBuffer);
   const coreXml = await verifiedZip.file('docProps/core.xml').async('text');
   const appXml = await verifiedZip.file('docProps/app.xml').async('text');
 
-  console.log('8. Fyzická inšpekcia vygenerovaného XML:');
-  console.log('   core.xml obsahuje "Dr. Ing. Martin Craft"?', coreXml.includes('Dr. Ing. Martin Craft'));
-  console.log('   core.xml obsahuje "Revolučný redizajn OpenXML metadát"?', coreXml.includes('Revolučný redizajn OpenXML metadát'));
-  console.log('   core.xml obsahuje revíziu "30"?', coreXml.includes('<cp:revision>30</cp:revision>'));
-  console.log('   app.xml obsahuje slová "28500"?', appXml.includes('<Words>28500</Words>'));
-  console.log('   app.xml obsahuje strany "64"?', appXml.includes('<Pages>64</Pages>'));
-  console.log('   app.xml obsahuje čas "720"?', appXml.includes('<TotalTime>720</TotalTime>'));
-  console.log('   app.xml obsahuje spoločnosť "Slovenská Technická Akadémia"?', appXml.includes('Slovenská Technická Akadémia'));
+  console.log('8. Physical inspection of generated XML:');
+  console.log('   core.xml contains "Dr. Martin Craft"?', coreXml.includes('Dr. Martin Craft'));
+  console.log('   core.xml contains "OpenXML Metadata Redesign"?', coreXml.includes('OpenXML Metadata Redesign'));
+  console.log('   core.xml contains revision "30"?', coreXml.includes('<cp:revision>30</cp:revision>'));
+  console.log('   app.xml contains words "28500"?', appXml.includes('<Words>28500</Words>'));
+  console.log('   app.xml contains pages "64"?', appXml.includes('<Pages>64</Pages>'));
+  console.log('   app.xml contains time "720"?', appXml.includes('<TotalTime>720</TotalTime>'));
+  console.log('   app.xml contains company "National Technology Academy"?', appXml.includes('National Technology Academy'));
 
-  // Overenie neprítomnosti defektov xmlns=""
+  // Ensure no broken xmlns="" declarations exist
   if (coreXml.includes('xmlns=""') || appXml.includes('xmlns=""')) {
-    throw new Error('Kritická chyba: Vygenerovaný XML obsahuje poškodený namespace xmlns=""!');
+    throw new Error('Critical error: Generated XML contains broken namespace xmlns=""!');
   }
 
   if (
-    !coreXml.includes('Dr. Ing. Martin Craft') ||
+    !coreXml.includes('Dr. Martin Craft') ||
     !coreXml.includes('30') ||
     !appXml.includes('28500') ||
     !appXml.includes('64') ||
     !appXml.includes('720')
   ) {
-    throw new Error('Metadáta v ukladacom archíve neboli správne zapísané!');
+    throw new Error('Metadata in the saved archive was not written properly!');
   }
 
-  // 9. DYNAMICKÝ BRANDING & FAREBNÁ ADAPTÁCIA (Word = Modrá, Excel = Zelená, PowerPoint = Červená)
-  console.log('\n9. Test dynamického brandingu a farebnej témy pre XLSX a PPTX...');
+  // 9. DYNAMIC BRANDING & THEME ADAPTATION (Word = Blue, Excel = Green, PowerPoint = Red)
+  console.log('\n9. Testing dynamic branding and theme adaptation for XLSX and PPTX...');
 
   // Test XLSX
-  const xlsxPath = await createTempOfficeFile('xlsx', 'test_rozpocet.xlsx');
-  console.log('   Nahrávam dočasný Excel súbor:', xlsxPath);
+  const xlsxPath = await createTempOfficeFile('xlsx', 'test_budget.xlsx');
+  console.log('   Loading temporary Excel file:', xlsxPath);
   const fileInput = await page.$('#systemFileInput');
   await fileInput.setInputFiles(xlsxPath);
   await page.waitForTimeout(500);
@@ -175,12 +175,12 @@ async function createTempOfficeFile(type, fileName) {
   const docTypeExcel = await page.evaluate(() => document.documentElement.getAttribute('data-doc-type'));
   const themeAccentExcel = await page.evaluate(() => window.getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim());
 
-  console.log(`   Excel Brand Name: "${brandNameExcel}" (očakáva sa "ExcelProps")`);
-  console.log(`   Excel Brand Tag: "${brandTagExcel}" (očakáva sa "XLSX")`);
+  console.log(`   Excel Brand Name: "${brandNameExcel}" (expected "ExcelProps")`);
+  console.log(`   Excel Brand Tag: "${brandTagExcel}" (expected "XLSX")`);
   console.log(`   Excel Badge Classes: "${badgeClassesExcel}"`);
   console.log(`   Excel Icon Display: "${iconExcelDisplay}"`);
-  console.log(`   Excel data-doc-type: "${docTypeExcel}" (očakáva sa "xlsx")`);
-  console.log(`   Excel --theme-accent: "${themeAccentExcel}" (očakáva sa zelená #10b981)`);
+  console.log(`   Excel data-doc-type: "${docTypeExcel}" (expected "xlsx")`);
+  console.log(`   Excel --theme-accent: "${themeAccentExcel}" (expected green #10b981)`);
 
   if (
     brandNameExcel !== 'ExcelProps' ||
@@ -190,12 +190,12 @@ async function createTempOfficeFile(type, fileName) {
     docTypeExcel !== 'xlsx' ||
     themeAccentExcel !== '#10b981'
   ) {
-    throw new Error('Dynamický branding a farebná téma pre Excel (zelená) zlyhali!');
+    throw new Error('Dynamic branding or theme for Excel (green) failed!');
   }
 
   // Test PPTX
-  const pptxPath = await createTempOfficeFile('pptx', 'test_prezentacia.pptx');
-  console.log('   Nahrávam dočasný PowerPoint súbor:', pptxPath);
+  const pptxPath = await createTempOfficeFile('pptx', 'test_presentation.pptx');
+  console.log('   Loading temporary PowerPoint file:', pptxPath);
   await fileInput.setInputFiles(pptxPath);
   await page.waitForTimeout(500);
 
@@ -206,12 +206,12 @@ async function createTempOfficeFile(type, fileName) {
   const docTypePpt = await page.evaluate(() => document.documentElement.getAttribute('data-doc-type'));
   const themeAccentPpt = await page.evaluate(() => window.getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim());
 
-  console.log(`   PPTX Brand Name: "${brandNamePpt}" (očakáva sa "SlideProps")`);
-  console.log(`   PPTX Brand Tag: "${brandTagPpt}" (očakáva sa "PPTX")`);
+  console.log(`   PPTX Brand Name: "${brandNamePpt}" (expected "SlideProps")`);
+  console.log(`   PPTX Brand Tag: "${brandTagPpt}" (expected "PPTX")`);
   console.log(`   PPTX Badge Classes: "${badgeClassesPpt}"`);
   console.log(`   PPTX Icon Display: "${iconPptDisplay}"`);
-  console.log(`   PPTX data-doc-type: "${docTypePpt}" (očakáva sa "pptx")`);
-  console.log(`   PPTX --theme-accent: "${themeAccentPpt}" (očakáva sa červená #ef4444)`);
+  console.log(`   PPTX data-doc-type: "${docTypePpt}" (expected "pptx")`);
+  console.log(`   PPTX --theme-accent: "${themeAccentPpt}" (expected red #ef4444)`);
 
   if (
     brandNamePpt !== 'SlideProps' ||
@@ -221,20 +221,20 @@ async function createTempOfficeFile(type, fileName) {
     docTypePpt !== 'pptx' ||
     themeAccentPpt !== '#ef4444'
   ) {
-    throw new Error('Dynamický branding a farebná téma pre PowerPoint (červená) zlyhali!');
+    throw new Error('Dynamic branding or theme for PowerPoint (red) failed!');
   }
 
-  // Upratanie dočasných súborov po teste
+  // Clean up temporary test files
   try {
     if (fs.existsSync(xlsxPath)) fs.unlinkSync(xlsxPath);
     if (fs.existsSync(pptxPath)) fs.unlinkSync(pptxPath);
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
   } catch (cleanErr) {
-    console.warn('Upozornenie pri mazaní testovacích súborov:', cleanErr.message);
+    console.warn('Notice while deleting test files:', cleanErr.message);
   }
 
-  // 10. TEST RESPONZIVITY TOP BARU (Kompaktné aj široké okná & bezpečná zóna pred Windows tlačidlami)
-  console.log('\n10. Test responzivity top baru a bezpečnej zóny pred Windows tlačidlami...');
+  // 10. TEST TOP BAR RESPONSIVENESS AND WINDOWS SYSTEM BUTTON COLLISION
+  console.log('\n10. Testing top bar responsiveness and safety zone clearance...');
   const testWidths = [1600, 1440, 1240, 1024, 960];
 
   for (const w of testWidths) {
@@ -247,20 +247,19 @@ async function createTempOfficeFile(type, fileName) {
     const rightEdge = box ? Math.round(box.x + box.width) : 0;
     const safeLimit = w - 140; // Windows minimize/maximize/close reserve zone
 
-    console.log(`   Šírka okna ${w}px -> Uložiť viditeľné: ${isVisible}, pravý okraj: ${rightEdge}px (limit bezpečnej zóny: <= ${safeLimit}px)`);
+    console.log(`   Window width ${w}px -> Save visible: ${isVisible}, right edge: ${rightEdge}px (safety limit: <= ${safeLimit}px)`);
 
     if (!isVisible) {
-      throw new Error(`Tlačidlo Uložiť nie je viditeľné pri šírke ${w}px!`);
+      throw new Error(`Save button is not visible at window width ${w}px!`);
     }
     if (rightEdge > safeLimit) {
-      throw new Error(`KOLÍZIA: Tlačidlo Uložiť zasahuje do zóny Windows systémových tlačidiel (${rightEdge}px > ${safeLimit}px) pri šírke ${w}px!`);
+      throw new Error(`COLLISION: Save button intrudes into Windows controls reserve zone (${rightEdge}px > ${safeLimit}px) at width ${w}px!`);
     }
   }
 
   await browser.close();
-  console.log('\n=== VŠETKY E2E TESTY ÚSPEŠNE PREBEHLI (100% PASSED) ===');
+  console.log('\n=== ALL E2E TESTS PASSED (100%) ===');
 })().catch(err => {
-  console.error('\n❌ E2E TEST ZLYHAL:', err);
+  console.error('\n❌ E2E TEST FAILED:', err);
   process.exit(1);
 });
-

@@ -1,25 +1,25 @@
-# Bezpečnostná politika (Security Policy)
+# Security Policy
 
-## 1. Lokálny bezpečnostný model (Zero-Leak Guarantee)
+## 1. Local Security Model (Zero-Leak Guarantee)
 
-Aplikácia **DocProps Studio** bola navrhnutá s dôrazom na maximálne súkromie používateľov:
+**DocProps Studio** is engineered with an uncompromising focus on user privacy:
 
-- **100% Lokálne spracovanie:** Všetky operácie s dokumentmi (rozbaľovanie ZIP kontajnerov, parsovanie XML, úprava atribútov a spätné balenie) prebiehajú výhradne v lokálnej pamäti vášho počítača.
-- **Nulové sieťové požiadavky (No Telemetry / No Network):** Aplikácia neodosiela žiadne telemetrické dáta, analytiku ani obsah dokumentov na žiadne vzdialené servery ani cloudy.
-- **Nulové API kľúče a tajomstvá:** Zdrojový kód neobsahuje ani nevyžaduje žiadne API kľúče, tokeny tretích strán ani externé predplatné.
-- **Izolácia procesov:** V desktopovom režime Electron beží aplikácia so zapnutou izoláciou kontextu (`contextIsolation: true`) a vypnutým prístupom k `nodeIntegration` v okne prehliadača.
-
----
-
-## 2. Nahlásenie bezpečnostných zraniteľností
-
-Ak objavíte bezpečnostný problém alebo zraniteľnosť:
-- Vytvorte prosím privátne bezpečnostné hlásenie (Security Advisory) priamo na GitHube repozitára cez záložku **Security -> Report a vulnerability**.
-- Prípadne nahláste problém cez GitHub Issues s označením `[security]`.
+- **100% Local Processing:** All document operations (ZIP container unpacking, XML parsing, attribute manipulation, and repackaging) occur strictly within local system memory.
+- **Zero Network Requirements (No Telemetry / No Network Calls):** The application does not collect or transmit telemetry, analytics, user identifiers, or document contents to any remote server or cloud service.
+- **Content Security Policy (CSP):** The application interface enforces `connect-src 'none'`, strictly blocking unauthorized outbound network connections from the renderer process.
+- **Zero API Keys or Secrets:** The codebase neither includes nor requires external API tokens, cloud subscriptions, or remote credentials.
+- **Process Isolation:** The Electron desktop wrapper runs with robust context isolation (`contextIsolation: true`) and disabled Node.js integration (`nodeIntegration: false`) in the renderer process, communicating only via strictly validated IPC channels.
 
 ---
 
-## 3. Zrieknutie sa zodpovednosti (Disclaimer)
+## 2. Reporting Security Vulnerabilities
 
-Aplikácia je poskytovaná v stave „tak ako je“ (AS IS) bez akýchkoľvek záruk v zmysle licencie MIT. Používateľ je zodpovedný za dodržiavanie interných pravidiel svojej inštitúcie alebo organizácie pri správe dokumentov.
+If you discover a security concern or vulnerability:
+- Please submit a private security advisory on GitHub via **Security -> Report a vulnerability**.
+- Alternatively, open an issue labeled `[security]` in the repository tracker.
 
+---
+
+## 3. Disclaimer
+
+The application is provided "AS IS" without warranty of any kind under the MIT License. Users remain responsible for adhering to their organization's internal compliance policies when handling sensitive document metadata.
