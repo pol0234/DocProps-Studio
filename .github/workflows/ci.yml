@@ -39,3 +39,4 @@ jobs:
 
       - name: Run E2E Verification Suite
         run: npm test
+
